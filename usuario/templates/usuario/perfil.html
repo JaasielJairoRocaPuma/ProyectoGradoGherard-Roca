@@ -1,152 +1,17 @@
-{% extends 'usuario/base.html' %}
-
-{% block title %}Mi Perfil - Sistema Contable{% endblock %}
-
+{% extends 'base.html' %}
+{% block title %}Perfil | Sistema Contable{% endblock %}
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h2><i class="fas fa-user-edit me-2"></i>Mi Perfil</h2>
-        <p class="text-muted">Gestiona tu información personal</p>
+<h1 class="mb-4">Perfil de usuario</h1>
+<form method="post" novalidate>
+    {% csrf_token %}
+    {% for field in form %}
+    <div class="field">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}<div class="messages error">{{ field.errors }}</div>{% endif %}
     </div>
-</div>
-
-<div class="row mt-4">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-user me-2"></i>Información Personal</h5>
-            </div>
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="{{ form.first_name.id_for_label }}" class="form-label">
-                                {{ form.first_name.label }}
-                            </label>
-                            {{ form.first_name }}
-                            {% if form.first_name.errors %}
-                                <div class="text-danger small">
-                                    {% for error in form.first_name.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="{{ form.last_name.id_for_label }}" class="form-label">
-                                {{ form.last_name.label }}
-                            </label>
-                            {{ form.last_name }}
-                            {% if form.last_name.errors %}
-                                <div class="text-danger small">
-                                    {% for error in form.last_name.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="{{ form.email.id_for_label }}" class="form-label">
-                            {{ form.email.label }}
-                        </label>
-                        {{ form.email }}
-                        {% if form.email.errors %}
-                            <div class="text-danger small">
-                                {% for error in form.email.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="{{ form.telefono.id_for_label }}" class="form-label">
-                                {{ form.telefono.label }}
-                            </label>
-                            {{ form.telefono }}
-                            {% if form.telefono.errors %}
-                                <div class="text-danger small">
-                                    {% for error in form.telefono.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="{{ form.cargo.id_for_label }}" class="form-label">
-                                {{ form.cargo.label }}
-                            </label>
-                            {{ form.cargo }}
-                            {% if form.cargo.errors %}
-                                <div class="text-danger small">
-                                    {% for error in form.cargo.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-2"></i>Guardar Cambios
-                        </button>
-                        <a href="{% url 'usuario:dashboard' %}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left me-2"></i>Volver
-                        </a>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-info-circle me-2"></i>Información de Cuenta</h5>
-            </div>
-            <div class="card-body">
-                <table class="table table-borderless">
-                    <tr>
-                        <td><strong>Usuario:</strong></td>
-                        <td>{{ user.username }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Fecha de creación:</strong></td>
-                        <td>{{ user.fecha_creacion|date:"d/m/Y" }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Último acceso:</strong></td>
-                        <td>{{ user.last_login|date:"d/m/Y H:i"|default:"Primera vez" }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Estado:</strong></td>
-                        <td>
-                            {% if user.activo %}
-                                <span class="badge bg-success">Activo</span>
-                            {% else %}
-                                <span class="badge bg-danger">Inactivo</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                </table>
-                
-                <hr>
-                
-                <div class="d-grid">
-                    <a href="{% url 'usuario:cambiar_password' %}" class="btn btn-outline-warning">
-                        <i class="fas fa-key me-2"></i>Cambiar Contraseña
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+    {% endfor %}
+    <button class="btn" type="submit">Guardar</button>
+    <a class="btn btn-secondary" href="{% url 'usuario:cambiar_password' %}">Cambiar contraseña</a>
+    <a class="btn btn-secondary" href="{% url 'usuario:dashboard' %}">Volver</a>
 {% endblock %}

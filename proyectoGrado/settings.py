@@ -129,3 +129,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Configuración del modelo de usuario personalizado
 AUTH_USER_MODEL = 'usuario.UsuarioContable'
+
+# Autenticación: rutas por defecto
+LOGIN_URL = 'usuario:login'
+LOGIN_REDIRECT_URL = 'usuario:dashboard'
+LOGOUT_REDIRECT_URL = 'usuario:login'

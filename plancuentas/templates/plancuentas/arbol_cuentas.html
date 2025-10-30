@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Árbol de Cuentas{% endblock %}
+{% block content %}
+<h1 class="mb-4">Árbol de Cuentas</h1>
+<ul>
+  {% for c in cuentas_raiz %}
+    <li>{{ c.codigo }} - {{ c.nombre }}</li>
+  {% empty %}
+    <li>No hay cuentas raíz.</li>
+  {% endfor %}
+</ul>
+<a class="btn btn-secondary" href="{% url 'plancuentas:lista_cuentas' %}">Volver</a>
+{% endblock %}
+

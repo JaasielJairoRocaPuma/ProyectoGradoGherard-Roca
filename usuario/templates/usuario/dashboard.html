@@ -1,119 +1,41 @@
-{% extends 'usuario/base.html' %}
-
-{% block title %}Dashboard - Sistema Contable{% endblock %}
-
+{% extends 'base.html' %}
+{% block title %}Dashboard | Sistema Contable{% endblock %}
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h2><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h2>
-        <p class="text-muted">Bienvenido al Sistema Contable, {{ usuario.get_full_name|default:usuario.username }}</p>
+<h1 class="mb-4">Bienvenido, {{ usuario.get_full_name|default:usuario.username }}</h1>
+<div class="card-grid">
+    <div class="card">
+        <h3>Plan de Cuentas</h3>
+        <p>Gestione la estructura de cuentas contables.</p>
+        <a class="btn mt-2" href="{% url 'plancuentas:lista_cuentas' %}">Abrir</a>
     </div>
-</div>
+    <div class="card">
+        <h3>Comprobantes</h3>
+        <p>Registre y apruebe comprobantes contables.</p>
+        <a class="btn mt-2" href="{% url 'comprobantes:lista_comprobantes' %}">Abrir</a>
+    </div>
+    <div class="card">
+        <h3>Balance Sumas y Saldos</h3>
+        <p>Genere y revise sumas y saldos por período.</p>
+        <a class="btn mt-2" href="{% url 'balancesumasysaldos:lista_balances' %}">Abrir</a>
+    </div>
+    <div class="card">
+        <h3>Estados Financieros</h3>
+        <p>Estados Patrimoniales y de Resultados.</p>
+        <a class="btn mt-2" href="{% url 'estadopatrimonio:lista_estados_patrimoniales' %}">Abrir</a>
+    </div>
+    <div class="card">
+        <h3>Perfil</h3>
+        <p>Actualice sus datos y contraseña.</p>
+        <a class="btn mt-2" href="{% url 'usuario:perfil_usuario' %}">Abrir</a>
+    </div>
+    <div class="card">
+        <h3>Salir</h3>
+        <p>Cerrar sesión de forma segura.</p>
+        <a class="btn btn-secondary mt-2" href="{% url 'usuario:logout' %}">Cerrar sesión</a>
+    </div>
+    
+    {% block dashboard_extra %}{% endblock %}
 
-<div class="row mt-4">
-    <!-- Tarjetas de resumen -->
-    <div class="col-md-3 mb-4">
-        <div class="card text-center">
-            <div class="card-body">
-                <i class="fas fa-chart-of-accounts fa-3x text-primary mb-3"></i>
-                <h5 class="card-title">Plan de Cuentas</h5>
-                <p class="card-text">Gestionar cuentas contables</p>
-                <a href="#" class="btn btn-outline-primary">Acceder</a>
-            </div>
-        </div>
-    </div>
     
-    <div class="col-md-3 mb-4">
-        <div class="card text-center">
-            <div class="card-body">
-                <i class="fas fa-file-invoice fa-3x text-success mb-3"></i>
-                <h5 class="card-title">Comprobantes</h5>
-                <p class="card-text">Registrar asientos contables</p>
-                <a href="#" class="btn btn-outline-success">Acceder</a>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3 mb-4">
-        <div class="card text-center">
-            <div class="card-body">
-                <i class="fas fa-balance-scale fa-3x text-warning mb-3"></i>
-                <h5 class="card-title">Balance Sumas y Saldos</h5>
-                <p class="card-text">Generar reportes contables</p>
-                <a href="#" class="btn btn-outline-warning">Acceder</a>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3 mb-4">
-        <div class="card text-center">
-            <div class="card-body">
-                <i class="fas fa-chart-line fa-3x text-info mb-3"></i>
-                <h5 class="card-title">Estados Financieros</h5>
-                <p class="card-text">Ver estados patrimoniales</p>
-                <a href="#" class="btn btn-outline-info">Acceder</a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row mt-4">
-    <!-- Información del usuario -->
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-user me-2"></i>Información del Usuario</h5>
-            </div>
-            <div class="card-body">
-                <table class="table table-borderless">
-                    <tr>
-                        <td><strong>Usuario:</strong></td>
-                        <td>{{ usuario.username }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Nombre:</strong></td>
-                        <td>{{ usuario.get_full_name|default:"No especificado" }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Email:</strong></td>
-                        <td>{{ usuario.email|default:"No especificado" }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Cargo:</strong></td>
-                        <td>{{ usuario.cargo|default:"No especificado" }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Último acceso:</strong></td>
-                        <td>{{ usuario.last_login|date:"d/m/Y H:i"|default:"Primera vez" }}</td>
-                    </tr>
-                </table>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Acciones rápidas -->
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-bolt me-2"></i>Acciones Rápidas</h5>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="{% url 'usuario:perfil_usuario' %}" class="btn btn-outline-primary">
-                        <i class="fas fa-user-edit me-2"></i>Editar Perfil
-                    </a>
-                    <a href="{% url 'usuario:cambiar_password' %}" class="btn btn-outline-secondary">
-                        <i class="fas fa-key me-2"></i>Cambiar Contraseña
-                    </a>
-                    <a href="#" class="btn btn-outline-success">
-                        <i class="fas fa-plus me-2"></i>Nuevo Comprobante
-                    </a>
-                    <a href="#" class="btn btn-outline-info">
-                        <i class="fas fa-chart-bar me-2"></i>Ver Reportes
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 {% endblock %}

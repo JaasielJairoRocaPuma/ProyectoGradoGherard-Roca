@@ -23,13 +23,13 @@ class LoginView(TemplateView):
     def get(self, request, *args, **kwargs):
         # Si el usuario ya está autenticado, redirigir al dashboard
         if request.user.is_authenticated:
-            return redirect('dashboard')
+            return redirect('usuario:dashboard')
         
-        form = LoginForm()
+        form = LoginForm(request=request)
         return render(request, self.template_name, {'form': form})
     
     def post(self, request, *args, **kwargs):
-        form = LoginForm(request.POST)
+        form = LoginForm(request=request, data=request.POST)
         
         if form.is_valid():
             username = form.cleaned_data['username']
@@ -41,7 +41,7 @@ class LoginView(TemplateView):
                 if user.activo:
                     login(request, user)
                     messages.success(request, f'Bienvenido, {user.get_full_name()}')
-                    return redirect('dashboard')
+                    return redirect('usuario:dashboard')
                 else:
                     messages.error(request, 'Su cuenta está desactivada.')
             else:
@@ -59,7 +59,7 @@ def logout_view(request):
     """
     logout(request)
     messages.info(request, 'Sesión cerrada correctamente.')
-    return redirect('login')
+    return redirect('usuario:login')
 
 class DashboardView(LoginRequiredMixin, TemplateView):
     """

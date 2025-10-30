@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}Generar Balance{% endblock %}
+{% block content %}
+<h1 class="mb-4">Generar Balance de Sumas y Saldos</h1>
+<form method="post">{% csrf_token %}
+  {{ form.as_p }}
+  <button class="btn" type="submit">Generar</button>
+  <a class="btn btn-secondary" href="{% url 'balancesumasysaldos:lista_balances' %}">Cancelar</a>
+</form>
+{% endblock %}
+

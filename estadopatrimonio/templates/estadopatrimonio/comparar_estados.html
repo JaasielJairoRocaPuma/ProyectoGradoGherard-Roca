@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}Comparar Estados{% endblock %}
+{% block content %}
+<h1 class="mb-4">Comparar estados financieros</h1>
+<form method="post">{% csrf_token %}
+  {{ form.as_p }}
+  <button class="btn" type="submit">Comparar</button>
+  <a class="btn btn-secondary" href="{% url 'estadopatrimonio:lista_estados_patrimoniales' %}">Volver</a>
+</form>
+{% endblock %}
+

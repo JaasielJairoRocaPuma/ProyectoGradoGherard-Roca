@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}Anular Comprobante{% endblock %}
+{% block content %}
+<h1 class="mb-4">Anular comprobante {{ comprobante.numero }}</h1>
+<p>¿Desea anular este comprobante?</p>
+<form method="post">{% csrf_token %}
+  <button class="btn" type="submit">Anular</button>
+  <a class="btn btn-secondary" href="{% url 'comprobantes:detalle_comprobante' comprobante.pk %}">Cancelar</a>
+</form>
+{% endblock %}
+
