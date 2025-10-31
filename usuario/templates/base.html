@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Sistema Contable{% endblock %}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background:#f7f7f7; }
+        header { background:#1f2937; color:#fff; padding:12px 16px; }
+        main { padding:16px; }
+        nav a { color:#fff; margin-right:12px; text-decoration:none; }
+        .container { max-width: 1100px; margin: 0 auto; background:#fff; padding:16px; border-radius:8px; }
+        .card-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:12px; }
+        .card { border:1px solid #e5e7eb; border-radius:8px; padding:12px; background:#fff; }
+        .btn { display:inline-block; padding:8px 12px; background:#2563eb; color:#fff; text-decoration:none; border-radius:6px; }
+        .btn-secondary { background:#6b7280; }
+        .mt-2 { margin-top: 8px; }
+        .mt-4 { margin-top: 16px; }
+        .mb-2 { margin-bottom: 8px; }
+        .mb-4 { margin-bottom: 16px; }
+        .flex { display:flex; align-items:center; justify-content:space-between; }
+        footer { color:#6b7280; font-size:12px; padding:16px; text-align:center; }
+        form .field { margin-bottom:12px; }
+        form label { display:block; font-weight:bold; margin-bottom:6px; }
+        form input, form select, form textarea { width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px; }
+        .messages { margin-bottom: 12px; }
+        .messages li { padding:8px; border-radius:6px; margin-bottom:6px; list-style:none; }
+        .messages .success { background:#ecfdf5; color:#065f46; border:1px solid #10b981; }
+        .messages .error { background:#fef2f2; color:#991b1b; border:1px solid #ef4444; }
+        .messages .info { background:#eff6ff; color:#1e40af; border:1px solid #3b82f6; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container flex">
+            <div>
+                <strong>Sistema Contable</strong>
+            </div>
+            <nav>
+                {% if request.user.is_authenticated %}
+                    <a href="{% url 'usuario:dashboard' %}">Dashboard</a>
+                    <a href="{% url 'plancuentas:lista_cuentas' %}">Plan de Cuentas</a>
+                    <a href="{% url 'comprobantes:lista_comprobantes' %}">Comprobantes</a>
+                    <a href="{% url 'balancesumasysaldos:lista_balances' %}">Balance Sumas y Saldos</a>
+                    <a href="{% url 'estadopatrimonio:lista_estados_patrimoniales' %}">Estados</a>
+                    <a href="{% url 'usuario:perfil_usuario' %}">Perfil</a>
+                    <a href="{% url 'usuario:logout' %}">Salir</a>
+                {% else %}
+                    <a href="{% url 'usuario:login' %}">Ingresar</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+    <main>
+        <div class="container">
+            {% if messages %}
+            <ul class="messages">
+                {% for m in messages %}
+                    <li class="{{ m.tags }}">{{ m }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+    <footer>
+        © {% now 'Y' %} Sistema Contable - Proyecto de Grado
+    </footer>
+</body>
+</html>
+

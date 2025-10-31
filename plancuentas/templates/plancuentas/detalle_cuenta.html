@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Detalle Cuenta{% endblock %}
+{% block content %}
+<h1 class="mb-4">{{ cuenta.codigo }} - {{ cuenta.nombre }}</h1>
+<p><strong>Tipo:</strong> {{ cuenta.get_tipo_display }}</p>
+<p><strong>Naturaleza:</strong> {{ cuenta.get_naturaleza_display }}</p>
+<p><strong>Nivel:</strong> {{ cuenta.nivel }}</p>
+<p><strong>Saldo inicial:</strong> {{ saldo_inicial }}</p>
+
+<h3 class="mt-4">Subcuentas</h3>
+{% if cuentas_hijas %}
+<ul>
+    {% for h in cuentas_hijas %}
+    <li>{{ h.codigo }} - {{ h.nombre }}</li>
+    {% endfor %}
+  </ul>
+{% else %}
+<p>No hay subcuentas.</p>
+{% endif %}
+
+<div class="mt-4">
+  <a class="btn" href="{% url 'plancuentas:editar_cuenta' cuenta.pk %}">Editar</a>
+  <a class="btn btn-secondary" href="{% url 'plancuentas:lista_cuentas' %}">Volver</a>
+</div>
+{% endblock %}
+

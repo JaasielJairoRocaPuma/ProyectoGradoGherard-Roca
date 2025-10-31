@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Ingresar | Sistema Contable{% endblock %}
+{% block content %}
+<h1 class="mb-4">Ingreso al sistema</h1>
+<form method="post" novalidate>
+    {% csrf_token %}
+    <div class="field">
+        <label for="id_username">Usuario</label>
+        {{ form.username }}
+        {% if form.username.errors %}<div class="messages error">{{ form.username.errors }}</div>{% endif %}
+    </div>
+    <div class="field">
+        <label for="id_password">Contraseña</label>
+        {{ form.password }}
+        {% if form.password.errors %}<div class="messages error">{{ form.password.errors }}</div>{% endif %}
+    </div>
+    <button class="btn" type="submit">Ingresar</button>
+</form>
+{% endblock %}

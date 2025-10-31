@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}Eliminar Cuenta{% endblock %}
+{% block content %}
+<h1 class="mb-4">Eliminar cuenta</h1>
+<p>¿Confirma eliminar esta cuenta?</p>
+<form method="post">{% csrf_token %}
+  <button class="btn" type="submit">Eliminar</button>
+  <a class="btn btn-secondary" href="{% url 'plancuentas:lista_cuentas' %}">Cancelar</a>
+</form>
+{% endblock %}
+

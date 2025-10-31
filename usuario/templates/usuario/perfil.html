@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Perfil | Sistema Contable{% endblock %}
+{% block content %}
+<h1 class="mb-4">Perfil de usuario</h1>
+<form method="post" novalidate>
+    {% csrf_token %}
+    {% for field in form %}
+    <div class="field">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}<div class="messages error">{{ field.errors }}</div>{% endif %}
+    </div>
+    {% endfor %}
+    <button class="btn" type="submit">Guardar</button>
+    <a class="btn btn-secondary" href="{% url 'usuario:cambiar_password' %}">Cambiar contraseña</a>
+    <a class="btn btn-secondary" href="{% url 'usuario:dashboard' %}">Volver</a>
+{% endblock %}

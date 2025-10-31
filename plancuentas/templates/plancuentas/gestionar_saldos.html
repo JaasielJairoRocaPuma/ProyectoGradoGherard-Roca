@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Saldos Iniciales{% endblock %}
+{% block content %}
+<h1 class="mb-4">Saldos iniciales</h1>
+<form method="post">{% csrf_token %}
+  {{ form.as_p }}
+  <button class="btn" type="submit">Guardar saldo</button>
+  <a class="btn btn-secondary" href="{% url 'plancuentas:lista_cuentas' %}">Volver</a>
+</form>
+
+<h3 class="mt-4">Saldos registrados</h3>
+<ul>
+  {% for s in saldos %}
+    <li>{{ s.cuenta.codigo }} - {{ s.cuenta.nombre }}: {{ s.monto }}</li>
+  {% empty %}
+    <li>No hay saldos registrados.</li>
+  {% endfor %}
+</ul>
+{% endblock %}
+

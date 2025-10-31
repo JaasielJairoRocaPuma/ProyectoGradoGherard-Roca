@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Secuencias{% endblock %}
+{% block content %}
+<h1 class="mb-4">Secuencias de comprobantes</h1>
+<form method="post">{% csrf_token %}
+  {{ form.as_p }}
+  <button class="btn" type="submit">Guardar</button>
+  <a class="btn btn-secondary" href="{% url 'comprobantes:lista_comprobantes' %}">Volver</a>
+</form>
+
+<h3 class="mt-4">Configuraciones</h3>
+<ul>
+  {% for s in secuencias %}
+    <li>{{ s.get_tipo_display }}: {{ s.prefijo }} - formato {{ s.formato }}</li>
+  {% empty %}
+    <li>No hay secuencias.</li>
+  {% endfor %}
+</ul>
+{% endblock %}
+
