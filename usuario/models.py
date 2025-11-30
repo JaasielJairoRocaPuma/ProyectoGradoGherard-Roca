@@ -31,6 +31,11 @@ class UsuarioContable(AbstractUser):
         default=True,
         verbose_name="Usuario activo"
     )
+    # ci=models.CharField(
+    #     max_length=20,
+    #     unique=True,
+    #     verbose_name="Cédula de Identidad"
+    # )
     
     class Meta:
         verbose_name = "Usuario Contable"

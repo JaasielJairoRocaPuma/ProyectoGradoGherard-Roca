@@ -1,34 +1,122 @@
 {% extends 'base.html' %}
 {% block title %}Plan de Cuentas{% endblock %}
 {% block content %}
-<h1 class="mb-4">Plan de Cuentas</h1>
+<h1 class="mb-4 text-light fw-semibold text-center">Plan de Cuentas</h1>
 <div class="mb-4">
-    <a class="btn" href="{% url 'plancuentas:crear_cuenta' %}">Nueva cuenta</a>
-    <a class="btn btn-secondary" href="{% url 'plancuentas:arbol_cuentas' %}">Ver árbol</a>
-    <a class="btn btn-secondary" href="{% url 'usuario:dashboard' %}">Volver</a>
-    <a class="btn btn-secondary" href="{% url 'plancuentas:gestionar_saldos' %}">Saldos iniciales</a>
+    
+    <a class="btn btn-success bg-gradient fw-bold" href="{% url 'usuario:dashboard' %}">Volver</a>
+    
+  </div>
+  <div class="d-flex fw-bold text-light bg-primary bg-gradient p-2 rounded-top">
+    <div class="col-2">Código</div>
+    <div class="col-8">Nombre</div>
+    <div class="col-0">Tipo</div>
+    <div class="col-1 text-end">Nivel</div>
+  </div>
+  <div>
+    {% for g in grupos %}
+    <div class="mt-2 card d-flex bg-primary-subtle border-success-subtle shadow border-5" id="grupo">
+      <strong>
+        <span>
+          {{ g.codigo }}
+        </span> 
+        <span class="me-5">
+          {{ g.nombre }}
+        </span>
+        <span style="float: right;">
+          {{ g.nivel }}
+        </span>
+        <span class="me-5" style="float: right;">
+          {{ g.tipo }}
+        </span>
+      </strong>
+      {% for sg in subgrupos %}
+      {% if sg.grupo.id == g.id %}
+      <div class="mt-1 card bg-transparent border-1" id="subgrupo">
+        <span>{{ sg.codigo }} <strong>{{ sg.nombre }} 
+          <span style="float: right;"> {{ sg.nivel }}</span>
+          <span class="me-4" style="float: right;">{{ sg.tipo }} </span>
+        </strong></span>
+        {% for m in cuentas_matriz %}
+        {% if m.subgrupo.id == sg.id %}
+        <div class="mt-1 card bg-transparent shadow border-0" id="matriz">
+          <span>{{ m.codigo }} <strong>{{ m.nombre }} 
+            <span style="float: right;">{{ m.nivel }}</span>
+            <span class="me-3" style="float: right;">{{ m.tipo }}</span>
+          </strong></span>
+          {% for cm in cuentas_mayor %}
+          {% if cm.cuentamatriz.id == m.id %}
+          <div class="mt-1 card gradient-bg-cuenta" id="mayor">
+            <span>
+              {{ cm.codigo }} <strong>{{ cm.nombre }} 
+                <span style="float: right;">{{ cm.nivel }}</span>
+                <span class="me-3" style="float: right;">{{ cm.tipo }}</span>
+              </strong>
+            </span>
+            <span>
+              <button style="float: right;" class="btn" id="agregar" data-bs-toggle="collapse" data-bs-target="#formAdd{{ cm.id }}" aria-expanded="false" aria-controls="formAdd{{ cm.id }}">➕</button>
+            </span>
+            <hr>
+            <div class="collapse bg-transparent" id="formAdd{{ cm.id }}">
+              <div class="card card-body border-warning-subtle border-3 bg-transparent">
+                <form method="POST">
+                  {% csrf_token %}
+                  {{ form.as_p }}
+                  <label for="cuentamayor">Cuenta Mayor:</label>
+                  <input type="number" id="cuentamayor" name="cuentamayor" value="{{ cm.id }}" readonly class="form-control">
+                  <label for="tipo">Tipo de Cuenta:</label>
+                  <input type="text" id="tipo" name="tipo" value="Detalle" readonly class="form-control">
+                  <button type="submit" class="btn btn-primary mt-2" name="type" value="crear">Crear Cuenta Auxiliar</button>
+                </form>
+              </div>
+            </div>
+            {% for ca in cuentas_auxiliar %}
+            {% if ca.cuentamayor.id == cm.id %}
+            <div>
+              <span>
+                {{ ca.codigo }}
+                {{ ca.nombre }}
+                <span style="float: right;">{{ ca.nivel }}</span>
+                <span class="me-3" style="float: right;">{{ ca.tipo }}</span>
+              </span>
+              <form method="post">
+                {% csrf_token %}
+                <input type="number" name="id" value="{{ ca.id }}" style="display: none;">
+                <button style="float: right;" class="btn" id="borrar" name="type" value="borrar">🗑️</button>
+              </form>
+              <button style="float: right;" class="btn" id="editar" data-bs-toggle="collapse" data-bs-target="#formEdit{{ ca.id }}" aria-expanded="false" aria-controls="formEdit{{ ca.id }}">✏️</button>
+              
+              <div class="collapse bg-transparent" id="formEdit{{ ca.id }}">
+                <div class="card card-body border-warning-subtle border-3 bg-transparent">
+                  <form method="POST">
+                    {% csrf_token %}
+                    <label for="cod">Codigo de la Cuenta:</label>
+                    <input type="number" id="cod" name="cod" value="{{ ca.cod }}" readonly class="form-control">
+                    <input type="number" name="id" value="{{ ca.id }}" style="display: none;">
+                    {{ formE.as_p }}
+                    <label for="cuentamayor">Cuenta Mayor:</label>
+                    <input type="number" id="cuentamayor" name="cuentamayor" value="{{ cm.id }}" readonly class="form-control">
+                    <label for="tipo">Tipo de Cuenta:</label>
+                    <input type="text" id="tipo" name="tipo" value="Detalle" readonly class="form-control">
+                    <button type="submit" class="btn btn-success bg-gradient mt-2" name="type" value="editar">Editar Cuenta Auxiliar</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    {% endfor %}
   </div>
 
-{% if form_busqueda %}
-<form method="get" class="mb-4">
-  {{ form_busqueda.as_p }}
-  <button class="btn" type="submit">Buscar</button>
-  <a class="btn btn-secondary" href="{% url 'plancuentas:lista_cuentas' %}">Limpiar</a>
-  </form>
-{% endif %}
-
-<div class="card">
-  {% if cuentas %}
-  <ul>
-    {% for c in cuentas %}
-      <li>
-        <a href="{% url 'plancuentas:detalle_cuenta' c.pk %}">{{ c.codigo }} - {{ c.nombre }}</a>
-      </li>
-    {% endfor %}
-  </ul>
-  {% else %}
-  <p>No hay cuentas registradas.</p>
-  {% endif %}
-</div>
 {% endblock %}
 

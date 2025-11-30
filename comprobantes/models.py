@@ -1,295 +1,119 @@
-# Archivo: comprobantes/models.py
-# Descripción: Define los modelos para el módulo de comprobantes contables.
-# Incluye comprobantes, detalles de comprobantes y tipos de comprobantes.
-
 from django.db import models
-from django.core.validators import MinValueValidator, MaxValueValidator
-from django.contrib.auth import get_user_model
-from plancuentas.models import PlanCuentas
+from django.db.models import F
+from plancuentas.models import CuentaAuxiliar
+# Create your models here.
 
-User = get_user_model()
+class Extencion(models.TextChoices):
+    LP = 'LP', 'La Paz'
+    CB = 'CB', 'Cochabamba'
+    SC = 'SC', 'Santa Cruz'
+    OR = 'OR', 'Oruro'
+    PT = 'PT', 'Potosi'
+    TJ = 'TJ', 'Tarija'
+    CH = 'CH', 'Chuquisaca'
+    BE = 'BE', 'Beni'
+    PD = 'PD', 'Pando'
 
-class TipoComprobante(models.TextChoices):
-    """
-    Opciones para el tipo de comprobante contable.
-    Define los diferentes tipos de documentos contables.
-    """
-    INGRESO = 'INGRESO', 'Comprobante de Ingreso'
-    EGRESO = 'EGRESO', 'Comprobante de Egreso'
-    DIARIO = 'DIARIO', 'Asiento de Diario'
-    TRASPASO = 'TRASPASO', 'Asiento de Traspaso'
-    AJUSTE = 'AJUSTE', 'Asiento de Ajuste'
+class Firmas(models.Model):
+    nombre = models.CharField(max_length=100)
+    cargo = models.CharField(max_length=100)
+    ci=models.CharField(max_length=20, unique=True)
+    extencion= models.CharField(max_length=2, choices=Extencion.choices)
+    def __str__(self):
+        return f"{self.nombre} - {self.cargo}"
 
-class EstadoComprobante(models.TextChoices):
-    """
-    Opciones para el estado del comprobante.
-    Controla el flujo de trabajo de los comprobantes.
-    """
-    BORRADOR = 'BORRADOR', 'Borrador'
-    PENDIENTE = 'PENDIENTE', 'Pendiente de Aprobación'
-    APROBADO = 'APROBADO', 'Aprobado'
-    ANULADO = 'ANULADO', 'Anulado'
+class DescripcionCuentas(models.Model):
+    cuenta = models.ForeignKey(CuentaAuxiliar, on_delete=models.CASCADE)
+    debe = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    haber = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    def __str__(self):
+        return f"{self.cuenta.codigo} - {self.cuenta.nombre} | Debe: {self.debe} | Haber: {self.haber}"
+
+class TipoComprobante(models.IntegerChoices):
+    DIARIO = 1, 'Diario'
+    INGRESO = 2, 'Ingreso'
+    EGRESO = 3, 'Egreso'
+    AJUSTE = 4, 'Ajuste'
+
+    def __str__(self):
+        return self.label
+
 
 class Comprobante(models.Model):
-    """
-    Modelo principal para los comprobantes contables.
-    Representa cada documento contable con su información básica.
-    """
-    numero = models.CharField(
-        max_length=20,
-        unique=True,
-        verbose_name="Número de Comprobante",
-        help_text="Número único del comprobante"
-    )
-    tipo = models.CharField(
-        max_length=20,
-        choices=TipoComprobante.choices,
-        verbose_name="Tipo de Comprobante"
-    )
-    fecha = models.DateField(
-        verbose_name="Fecha del Comprobante"
-    )
-    concepto = models.TextField(
-        verbose_name="Concepto",
-        help_text="Descripción del comprobante"
-    )
-    estado = models.CharField(
-        max_length=20,
-        choices=EstadoComprobante.choices,
-        default=EstadoComprobante.BORRADOR,
-        verbose_name="Estado"
-    )
-    total_debe = models.DecimalField(
-        max_digits=15,
-        decimal_places=2,
-        default=0,
-        verbose_name="Total Debe"
-    )
-    total_haber = models.DecimalField(
-        max_digits=15,
-        decimal_places=2,
-        default=0,
-        verbose_name="Total Haber"
-    )
-    referencia = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        verbose_name="Referencia",
-        help_text="Número de referencia externa"
-    )
-    observaciones = models.TextField(
-        blank=True,
-        null=True,
-        verbose_name="Observaciones"
-    )
-    usuario_creacion = models.ForeignKey(
-        User,
-        on_delete=models.PROTECT,
-        related_name='comprobantes_creados',
-        verbose_name="Usuario Creación"
-    )
-    usuario_aprobacion = models.ForeignKey(
-        User,
-        on_delete=models.PROTECT,
-        related_name='comprobantes_aprobados',
-        blank=True,
-        null=True,
-        verbose_name="Usuario Aprobación"
-    )
-    fecha_creacion = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Fecha de Creación"
-    )
-    fecha_modificacion = models.DateTimeField(
-        auto_now=True,
-        verbose_name="Fecha de Modificación"
-    )
-    fecha_aprobacion = models.DateTimeField(
-        blank=True,
-        null=True,
-        verbose_name="Fecha de Aprobación"
-    )
-    
-    class Meta:
-        verbose_name = "Comprobante"
-        verbose_name_plural = "Comprobantes"
-        db_table = "comprobantes"
-        ordering = ['-fecha', '-numero']
-        indexes = [
-            models.Index(fields=['numero']),
-            models.Index(fields=['tipo']),
-            models.Index(fields=['fecha']),
-            models.Index(fields=['estado']),
-        ]
-    
-    def __str__(self):
-        return f"{self.tipo} - {self.numero} - {self.fecha}"
-    
-    def es_balanceado(self):
-        """
-        Verifica si el comprobante está balanceado (debe = haber).
-        """
-        return self.total_debe == self.total_haber
-    
-    def calcular_totales(self):
-        """
-        Calcula los totales de debe y haber del comprobante.
-        """
-        detalles = self.detalles.all()
-        self.total_debe = sum(detalle.debe for detalle in detalles)
-        self.total_haber = sum(detalle.haber for detalle in detalles)
-        self.save(update_fields=['total_debe', 'total_haber'])
-    
-    def aprobar(self, usuario):
-        """
-        Aprueba el comprobante.
-        """
-        if self.estado == EstadoComprobante.BORRADOR:
-            self.estado = EstadoComprobante.APROBADO
-            self.usuario_aprobacion = usuario
-            self.fecha_aprobacion = models.DateTimeField(auto_now=True)
-            self.save()
-            return True
-        return False
-    
-    def anular(self, usuario):
-        """
-        Anula el comprobante.
-        """
-        if self.estado in [EstadoComprobante.BORRADOR, EstadoComprobante.PENDIENTE]:
-            self.estado = EstadoComprobante.ANULADO
-            self.save()
-            return True
-        return False
+    numero = models.IntegerField(blank=True,null=True)
+    fecha = models.DateField()
+    glosa = models.CharField(max_length=100)
+    descripcionCuentas = models.ManyToManyField(DescripcionCuentas)  # referencia a otro modelo
+    beneficiario = models.CharField(max_length=100)
+    tipocambio = models.DecimalField(max_digits=10, decimal_places=4)  # ajusté max_digits
+    ufv = models.DecimalField(max_digits=12, decimal_places=6)
+    responsables = models.ManyToManyField(Firmas, related_name='responsables')
+    tipo = models.IntegerField(choices=TipoComprobante.choices, default=TipoComprobante.DIARIO)
+    imagen = models.ImageField(upload_to='comprobantes/', blank=True, null=True)
 
-class DetalleComprobante(models.Model):
-    """
-    Modelo para los detalles de cada comprobante.
-    Representa cada línea de débito o crédito del comprobante.
-    """
-    comprobante = models.ForeignKey(
-        Comprobante,
-        on_delete=models.CASCADE,
-        related_name='detalles',
-        verbose_name="Comprobante"
-    )
-    cuenta = models.ForeignKey(
-        PlanCuentas,
-        on_delete=models.PROTECT,
-        verbose_name="Cuenta Contable"
-    )
-    concepto = models.CharField(
-        max_length=200,
-        verbose_name="Concepto del Movimiento"
-    )
-    debe = models.DecimalField(
-        max_digits=15,
-        decimal_places=2,
-        default=0,
-        validators=[MinValueValidator(0)],
-        verbose_name="Debe"
-    )
-    haber = models.DecimalField(
-        max_digits=15,
-        decimal_places=2,
-        default=0,
-        validators=[MinValueValidator(0)],
-        verbose_name="Haber"
-    )
-    orden = models.PositiveIntegerField(
-        verbose_name="Orden",
-        help_text="Orden de aparición en el comprobante"
-    )
     
-    class Meta:
-        verbose_name = "Detalle de Comprobante"
-        verbose_name_plural = "Detalles de Comprobantes"
-        db_table = "detalles_comprobantes"
-        ordering = ['comprobante', 'orden']
-        indexes = [
-            models.Index(fields=['comprobante']),
-            models.Index(fields=['cuenta']),
-        ]
-    
-    def __str__(self):
-        return f"{self.comprobante.numero} - {self.cuenta.codigo} - {self.concepto}"
-    
-    def clean(self):
-        """
-        Validación personalizada del detalle.
-        """
-        from django.core.exceptions import ValidationError
-        
-        # Verificar que no se tenga debe y haber al mismo tiempo
-        if self.debe > 0 and self.haber > 0:
-            raise ValidationError("No se puede tener debe y haber al mismo tiempo.")
-        
-        # Verificar que al menos uno sea mayor a 0
-        if self.debe == 0 and self.haber == 0:
-            raise ValidationError("Debe o haber debe ser mayor a 0.")
-    
-    def save(self, *args, **kwargs):
-        """
-        Sobrescribir save para validaciones y actualizar totales.
-        """
-        self.clean()
-        super().save(*args, **kwargs)
-        # Actualizar totales del comprobante
-        self.comprobante.calcular_totales()
 
-class SecuenciaComprobante(models.Model):
-    """
-    Modelo para manejar la secuencia de numeración de comprobantes.
-    Permite diferentes secuencias por tipo de comprobante.
-    """
-    tipo = models.CharField(
-        max_length=20,
-        choices=TipoComprobante.choices,
-        unique=True,
-        verbose_name="Tipo de Comprobante"
-    )
-    prefijo = models.CharField(
-        max_length=10,
-        blank=True,
-        null=True,
-        verbose_name="Prefijo",
-        help_text="Prefijo para el número (ej: CI, CE, AD)"
-    )
-    siguiente_numero = models.PositiveIntegerField(
-        default=1,
-        verbose_name="Siguiente Número"
-    )
-    formato = models.CharField(
-        max_length=20,
-        default="000000",
-        verbose_name="Formato",
-        help_text="Formato del número (ej: 000000 para 6 dígitos)"
-    )
-    activo = models.BooleanField(
-        default=True,
-        verbose_name="Activo"
-    )
-    
-    class Meta:
-        verbose_name = "Secuencia de Comprobante"
-        verbose_name_plural = "Secuencias de Comprobantes"
-        db_table = "secuencias_comprobantes"
-    
     def __str__(self):
-        return f"{self.get_tipo_display()} - {self.siguiente_numero}"
+        return f"Comprobante Nro:{self.numero} - {self.get_tipo_display()}"
     
-    def obtener_siguiente_numero(self):
+    def agregar(self, *args, **kwargs):
         """
-        Obtiene el siguiente número en la secuencia.
+        Agrega un comprobante al final de la lista según su tipo.
         """
-        numero = self.siguiente_numero
-        self.siguiente_numero += 1
+        ultimo = Comprobante.objects.filter(tipo=self.tipo).order_by('-numero').first()
+        if ultimo:
+            self.numero = ultimo.numero + 1
+        else:
+            self.numero = 1
         self.save()
-        return numero
-    
-    def formatear_numero(self, numero):
+        # Agregar las cuentas asociadas (ManyToMany)
+        cuentas = kwargs.get('cuentas', [])
+        for c in cuentas:
+            self.descripcionCuentas.add(c)
+        # Agregar los responsables (ManyToMany)
+        firmas = kwargs.get('firmas', [])    
+        for f in firmas:
+            self.responsables.add(f)
+        return self
+
+    @classmethod
+    def insertar(cls, posicion, glosa, fecha, beneficiario, tipocambio, ufv, tipo, **kwargs):
         """
-        Formatea el número según el formato configurado.
+        Inserta un comprobante en la posición indicada (reordena los existentes)
+        y asigna las cuentas y responsables relacionados correctamente.
         """
-        return f"{self.prefijo or ''}{numero:0{len(self.formato)}d}"
+        # Mover los comprobantes que tengan un número >= a la posición
+        cls.objects.filter(tipo=tipo, numero__gte=posicion).update(numero=F('numero') + 1)
+
+        # Crear el nuevo comprobante
+        nuevo = cls.objects.create(
+            numero=posicion,
+            glosa=glosa,
+            fecha=fecha,
+            beneficiario=beneficiario,
+            tipocambio=tipocambio,
+            ufv=ufv,
+            tipo=tipo
+        )
+
+        # Agregar las cuentas asociadas (ManyToMany)
+        cuentas = kwargs.get('cuentas', [])
+        for c in cuentas:
+            nuevo.descripcionCuentas.add(c)
+
+        # Agregar los responsables (ManyToMany)
+        firmas = kwargs.get('firmas', [])    
+        for f in firmas:
+            nuevo.responsables.add(f)
+
+        return nuevo
+
+    def eliminar(self):
+        """
+        Elimina el comprobante y reordena los números de los comprobantes restantes.
+        """
+        tipo = self.tipo
+        numero = self.numero
+        self.delete()
+        # Reordenar los comprobantes restantes
+        Comprobante.objects.filter(tipo=tipo, numero__gt=numero).update(numero=F('numero') - 1)

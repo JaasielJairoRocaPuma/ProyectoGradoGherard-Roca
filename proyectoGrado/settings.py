@@ -41,8 +41,8 @@ INSTALLED_APPS = [
     'usuario',
     'plancuentas',
     'comprobantes',
-    'balancesumasysaldos',
-    'estadopatrimonio',
+    #'balancesumasysaldos',
+    #'estadopatrimonio',
 ]
 
 MIDDLEWARE = [
@@ -134,3 +134,8 @@ AUTH_USER_MODEL = 'usuario.UsuarioContable'
 LOGIN_URL = 'usuario:login'
 LOGIN_REDIRECT_URL = 'usuario:dashboard'
 LOGOUT_REDIRECT_URL = 'usuario:login'
+
+import os
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

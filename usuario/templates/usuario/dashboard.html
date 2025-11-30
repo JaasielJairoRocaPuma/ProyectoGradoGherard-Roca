@@ -1,32 +1,24 @@
 {% extends 'base.html' %}
 {% block title %}Dashboard | Sistema Contable{% endblock %}
 {% block content %}
-<h1 class="mb-4">Bienvenido, {{ usuario.get_full_name|default:usuario.username }}</h1>
+<h1 class="mb-4 text-light fw-semibold">Bienvenido, {{ usuario.get_full_name|default:usuario.username }}</h1>
 <div class="card-grid">
     <div class="card">
         <h3>Plan de Cuentas</h3>
-        <p>Gestione la estructura de cuentas contables.</p>
-        <a class="btn mt-2" href="{% url 'plancuentas:lista_cuentas' %}">Abrir</a>
+        <p>Estructura de cuentas contables.</p>
+        <a class="btn mt-2 btn-primary" href="{% url 'plancuentas:lista_cuentas' %}">Abrir</a>
     </div>
+
     <div class="card">
         <h3>Comprobantes</h3>
-        <p>Registre y apruebe comprobantes contables.</p>
-        <a class="btn mt-2" href="{% url 'comprobantes:lista_comprobantes' %}">Abrir</a>
+        <p>Gestion de comprobantes.</p>
+        <a class="btn mt-2 btn-primary" href="{% url 'comprobantes:lista_comprobantes' %}">Abrir</a>
     </div>
-    <div class="card">
-        <h3>Balance Sumas y Saldos</h3>
-        <p>Genere y revise sumas y saldos por período.</p>
-        <a class="btn mt-2" href="{% url 'balancesumasysaldos:lista_balances' %}">Abrir</a>
-    </div>
-    <div class="card">
-        <h3>Estados Financieros</h3>
-        <p>Estados Patrimoniales y de Resultados.</p>
-        <a class="btn mt-2" href="{% url 'estadopatrimonio:lista_estados_patrimoniales' %}">Abrir</a>
-    </div>
+    
     <div class="card">
         <h3>Perfil</h3>
         <p>Actualice sus datos y contraseña.</p>
-        <a class="btn mt-2" href="{% url 'usuario:perfil_usuario' %}">Abrir</a>
+        <a class="btn mt-2 btn-primary" href="{% url 'usuario:perfil_usuario' %}">Abrir</a>
     </div>
     <div class="card">
         <h3>Salir</h3>
