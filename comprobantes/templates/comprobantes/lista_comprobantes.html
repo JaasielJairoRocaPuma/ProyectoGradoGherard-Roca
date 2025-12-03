@@ -2,11 +2,24 @@
 {% block title %}Comprobantes{% endblock %}
 {% block content %}
 {% load custom_filters %}
-<h1 class="mb-4 text-light fw-semibold text-center">Lista de Comprobantes</h1>
-<div class="d-grid gap-2 d-md-flex justify-content-md-end">
-    <button class="btn btn-success me-md-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasTop" aria-controls="offcanvasTop">Imprimir</button>
-    <button class="btn btn-secondary" type="button" data-bs-toggle="offcanvas" data-bs-target="#InsertarComprobante" aria-controls="offcanvasTop">insertar</button>
-    <button class="btn btn-success me-md-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#CrearComprobante" aria-controls="offcanvasTop">nuevo</button>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="text-light fw-bold mb-1" style="font-size: 2rem;">Lista de Comprobantes</h1>
+        <a href="{% url 'usuario:dashboard' %}" class="btn btn-success text-light text-decoration-none">
+            <i class="bi bi-arrow-left me-1"></i>Volver
+        </a>
+    </div>
+    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+        <a class="btn btn-danger bg-gradient fw-bold me-2" href="{% url 'comprobantes:imprimirpdf' %}">
+            <i class="bi bi-printer me-1"></i>Imprimir
+        </a>
+        <button class="btn btn-secondary" type="button" data-bs-toggle="offcanvas" data-bs-target="#InsertarComprobante" aria-controls="offcanvasTop">
+            <i class="bi bi-plus-circle me-1"></i>Insertar
+        </button>
+        <button class="btn btn-success me-md-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#CrearComprobante" aria-controls="offcanvasTop">
+            <i class="bi bi-file-plus me-1"></i>Nuevo
+        </button>
+    </div>
 </div>
 
 <div class="offcanvas offcanvas-top gradient-bg-comprobante" tabindex="-1" id="CrearComprobante" aria-labelledby="offcanvasTopLabel" style="height: 80vh;">
@@ -117,36 +130,36 @@
         {% csrf_token %}
         <div class="row g-3 align-items-center">
             <div class="col-auto">
-                <label for="numeroC">Numero de Comproante</label>
+                <label for="numeroC">Numero de Comprobante</label>
             </div>
             <div class="col-auto">
-                {{ formCreate.numero }}
+                {{ formInsert.numero }}
             </div>
             <div class="col-auto">
                 <label for="{{ formCreate.tipo.id_for_label }}" class="col-form-label">Tipo de Comprobante</label>
             </div>
             <div class="col-auto">
-                {{ formCreate.tipo }}
+                {{ formInsert.tipo }}
             </div>
             <div class="col-auto">
-                <label for="id_fecha" class="col-form-label">Fecha</label>
+                <label for="id_fecha-i" class="col-form-label">Fecha</label>
             </div>
             <div class="col-auto">
-                <input type="date" name="fecha" id="id_fecha" class="form-control" onchange="obtenerUfv()">
+                <input type="date" name="fecha-i" id="id_fecha-i" class="form-control" onchange="obtenerUfv()">
             </div>
         </div>
         <div class="col-md-6">
             <label for="{{ formCreate.glosa.id_for_label }}" class="form-label">Glosa</label>
-            {{ formCreate.glosa }}
+            {{ formInsert.glosa }}
         </div>
         <div class="col-md-6">
             <label for="{{ formCreate.beneficiario.id_for_label }}" class="form-label">Beneficiario</label>
-            {{ formCreate.beneficiario }}
+            {{ formInsert.beneficiario }}
         </div>
         <div class="mt-4">
             <label class="form-label fw-bold">Agregar firmas responsables</label>
             <div class="input-group mb-2">
-                <select id="select-firma" class="form-select">
+                <select id="select-firma-i" class="form-select">
                 <option value="">Seleccione una firma...</option>
                 {% for f in firmas %}
                     <option value="{{ f.id }}">{{ f.nombre }} - {{ f.cargo }}</option>
@@ -155,15 +168,15 @@
                 <button type="button" class="btn btn-success" onclick="agregarFirma()">Agregar</button>
             </div>
         </div>
-        <ul id="lista-firmas" class="list-group mb-3"></ul>
+        <ul id="lista-firmas-i" class="list-group mb-3"></ul>
         <div class="mt-4">
             <label class="form-label fw-bold">Agregar Cuenta Auxiliar</label>
 
             <div class="row g-2 align-items-end">
                 <!-- Selección de la cuenta -->
                 <div class="col-md-4">
-                <label for="select-cuenta" class="form-label">Cuenta</label>
-                <select id="select-cuenta" class="form-select">
+                <label for="select-cuenta-i" class="form-label">Cuenta</label>
+                <select id="select-cuenta-i" class="form-select">
                     <option value="">Seleccione una Cuenta...</option>
                     {% for c in cuentas %}
                     <option value="{{ c.id }}">{{ c.cuentamayor }} - {{ c.nombre }}</option>
@@ -173,14 +186,14 @@
 
                 <!-- Debe -->
                 <div class="col-md-3">
-                <label for="{{ formCuenta.debe.id_for_label }}" class="form-label">Debe</label>
-                {{ formCuenta.debe }}
+                <label for="{{ formInsert.debe.id_for_label }}" class="form-label">Debe</label>
+                {{ formInsertD.debe }}
                 </div>
 
                 <!-- Haber -->
                 <div class="col-md-3">
-                <label for="{{ formCuenta.haber.id_for_label }}" class="form-label">Haber</label>
-                {{ formCuenta.haber }}
+                <label for="{{ formInsert.haber.id_for_label }}" class="form-label">Haber</label>
+                {{ formInsertD.haber }}
                 </div>
 
                 <!-- Botón Agregar -->
@@ -189,24 +202,23 @@
                 </div>
             </div>
         </div>
-        <ul id="lista-cuentas" class="list-group mb-3"></ul>
+        <ul id="lista-cuentas-i" class="list-group mb-3"></ul>
 
         <div class="col-md-12">
             <label for="{{ formCreate.imagen.id_for_label }}" class="form-label">Glosa</label>
-            {{ formCreate.imagen }}
+            {{ formInsert.imagen }}
         </div>
         
         <div class="col-md-4">
-            <label for="inputUfv" class="form-label">UFV</label>
-            <input type="number" name="inputUfv" id="inputUfv" step="0.000001" readonly class="form-control">
+            <label for="inputUfv-i" class="form-label">UFV</label>
+            <input type="number" name="inputUfv-i" id="inputUfv-i" step="0.000001" readonly class="form-control">
         </div>
         <div class="col-md-2">
-            <label for="tipo-cambio" class="form-label">T. Cambio</label>
-            <input type="text" name="tipo-cambio" class="form-control" id="tipo-cambio" readonly>
+            <label for="tipo-cambio-i" class="form-label">T. Cambio</label>
+            <input type="text" name="tipo-cambio-i" class="form-control" id="tipo-cambio-i" readonly>
         </div>
         <div class="col-12">
-            <a class="btn btn-primary" href="{% url 'comprobantes:insertar' %}"></a>
-            <button type="submit" class="btn btn-primary">Crear Comprobante</button>
+            <button type="submit" class="btn btn-primary">Insertar Comprobante</button>
         </div>
     </form>
   </div>
@@ -222,37 +234,45 @@
 <div>
     {% for c in comprobantes %}
     {% with data|index:forloop.counter0 as diferencias %}
-    <a href="{% url 'comprobantes:detalle_comprobante' c.id %}" class="text-decoration-none text-reset">
-        <div class="mt-2 card d-flex bg-primary-subtle border-success-subtle shadow border-5" id="comprobante">
-            <div class="card text-light bg-dark p-2">
-                <div class="row">
-                <div class="col-6">
-                    <div>
-                        <span class="me-3">Comprobante de ingreso Nro: {{ c.numero }}</span>
-                    </div>
-                    <div>
-                        <span class="me-3">Beneficiario: {{ c.beneficiario }}</span>
-                    </div>
-                </div>
-                <div class="col-6">
+    <div class="mt-2 position-relative">
+        <!-- Botón de eliminar -->
+        <form method="post" style="position: absolute; top: 10px; right: 10px; z-index: 10;" onsubmit="return confirm('¿Está seguro de eliminar el comprobante {{ c.get_tipo_display }} Nro: {{ c.numero }}? Esta acción no se puede deshacer.');">
+            {% csrf_token %}
+            <input type="hidden" name="id" value="{{ c.id }}">
+            <button type="submit" class="btn btn-sm" name="type" value="eliminar" style="background: rgba(255,255,255,0.9); border: none; font-size: 1.2rem; border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="Eliminar comprobante" onmouseover="this.style.background='rgba(220,53,69,0.9)'; this.style.transform='scale(1.1)'" onmouseout="this.style.background='rgba(255,255,255,0.9)'; this.style.transform='scale(1)'">🗑️</button>
+        </form>
+        
+        <a href="{% url 'comprobantes:detalle_comprobante' c.id %}" class="text-decoration-none text-reset">
+            <div class="mt-2 card d-flex bg-primary-subtle border-success-subtle shadow border-5" id="comprobante">
+                <div class="card text-light bg-dark p-2">
                     <div class="row">
-                        <span  style="float: right;">fecha: {{ c.fecha }}</span>
+                    <div class="col-6">
+                        <div>
+                            <span class="me-3">{{ c.get_tipo_display }} Nro: {{ c.numero }}</span>
+                        </div>
+                        <div>
+                            <span class="me-3">Beneficiario: {{ c.beneficiario }}</span>
+                        </div>
                     </div>
-                    <div class="row">
-                        <span class="me-4" style="float: right;">T. Cambio: {{ c.tipocambio }}</span>
+                    <div class="col-6">
+                        <div class="row">
+                            <span  style="float: right;">fecha: {{ c.fecha }}</span>
+                        </div>
+                        <div class="row">
+                            <span class="me-4" style="float: right;">T. Cambio: {{ c.tipocambio }}</span>
+                        </div>
                     </div>
-                </div>
-                </div>
-            
-        </div>
+                    </div>
+                
+            </div>
         <div class="card bg-transparent">
             {% for cu in diferencias.cuentas %}
             <div class="row">
-                <div class="col-9">
+                <div class="col-8">
                     <span>{{ cu.codigo }}</span>
                     <span>{{ cu.nombre }}</span>
                 </div>
-                <div class="col-3">
+                <div class="col-4">
                     <div class="row">
                         <div class="col-4">{{ cu.debe }}</div>
                         <div class="col-4">{{ cu.haber }}</div>
@@ -265,8 +285,8 @@
         </div>
         <div class="card bg-transparent">
             <div class="row">
-                <div class="col-9"></div>
-                <div class="col-3">
+                <div class="col-8"></div>
+                <div class="col-4">
                     <div class="row">
                         <div class="col-4">{{ c.total_debe }}</div>
                         <div class="col-4">{{ c.total_haber }}</div>
@@ -276,65 +296,101 @@
             </div>
         </div>
         </div>
-    </a>
+        </a>
+    </div>
     {% endwith %}
     {% endfor %}
 </div>
 <script>
+  const listaFirmasI = document.getElementById('lista-firmas-i');
   const listaFirmas = document.getElementById('lista-firmas');
+  const selectFirmaI = document.getElementById('select-firma-i');
   const selectFirma = document.getElementById('select-firma');
+  const listaCuentasI = document.getElementById('lista-cuentas-i');
   const listaCuentas = document.getElementById('lista-cuentas');
+  const selectCuentaI = document.getElementById('select-cuenta-i');
   const selectCuenta = document.getElementById('select-cuenta');
-  const debe = document.getElementById('id_debe');
+  const debe = document.getElementById('id_debe');  
+  const debeI = document.getElementById('id_debe-i');  
   const haber = document.getElementById('id_haber');
+  const haberI = document.getElementById('id_haber-i');
   
 
   function agregarFirma() {
     const id = selectFirma.value;
+    const idI = selectFirmaI.value;
     const texto = selectFirma.options[selectFirma.selectedIndex].text;
+    const textoI = selectFirmaI.options[selectFirmaI.selectedIndex].text;
 
-    if (!id) return;
+    if (!id && !idI) return;
 
     // Evitar duplicados
-    if (document.querySelector(`#firma-${id}`)) return alert('Ya está agregada');
+    if (document.querySelector(`#firma-${id}-i`)) return alert('Ya está agregada');
 
     // Crear elemento visual
     const li = document.createElement('li');
     li.className = 'list-group-item d-flex justify-content-between align-items-center';
     li.id = `firma-${id}`;
+    li.idI = `firma-${idI}`;
     li.innerHTML = `
       <span>${texto}</span>
       <input type="hidden" name="firmas[]" value="${id}">
       <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.remove()">×</button>
     `;
+    li.innerHTML = `
+      <span>${textoI}</span>
+      <input type="hidden" name="firmasi[]" value="${idI}">
+      <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.remove()">×</button>
+    `;
     listaFirmas.appendChild(li);
+    listaFirmasI.appendChild(li);
   }
 
   function agregarCuenta() {
     const id = selectCuenta.value;
+    const idI = selectCuentaI.value;
     const texto = selectCuenta.options[selectCuenta.selectedIndex].text;
+    const textoI = selectCuentaI.options[selectCuentaI.selectedIndex].text;
     const db=debe.value;
     const hb=haber.value;
-
-    if (!id) return;
-
-    // Evitar duplicados
-    if (document.querySelector(`#cuenta-${id}`)) {alert('Ya está agregada');return;}
-
-    // Crear elemento visual con input hidden
+    const dbi=debeI.value;
+    const hbi=haberI.value;
     const li = document.createElement('li');
     li.className = 'list-group-item d-flex justify-content-between align-items-center';
-    li.id = `cuenta-${id}`;
-    li.innerHTML = `
-        <span>${texto}</span>
-        <span>${db}</span>
-        <span>${hb}</span>
-        <input type="hidden" name="cuentas[]" value="${id}">
-        <input type="hidden" name="debe[]" value="${db}">
-        <input type="hidden" name="haber[]" value="${hb}">
-        <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.remove()">×</button>
-    `;
-    listaCuentas.appendChild(li);
+    
+    if (!id&&!idI) return;
+    
+    if(!idI){
+        if (document.querySelector(`#cuenta-${id}`)) {alert('Ya está agregada');return;}
+        li.id = `cuenta-${id}`;
+        li.innerHTML = `
+            <span>${texto}</span>
+            <span>${db}</span>
+            <span>${hb}</span>
+            <input type="hidden" name="cuentas[]" value="${id}">
+            <input type="hidden" name="debe[]" value="${db}">
+            <input type="hidden" name="haber[]" value="${hb}">
+            <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.remove()">×</button>
+        `;
+        listaCuentas.appendChild(li);
+    } else {
+        if (document.querySelector(`#cuenta-${idI}`)) {alert('Ya está agregada');return;}
+        li.idI = `cuenta-${idI}`;
+        li.innerHTML = `
+            <span>${textoI}</span>
+            <span>${dbi}</span>
+            <span>${hbi}</span>
+            <input type="hidden" name="cuentasi[]" value="${idI}">
+            <input type="hidden" name="debei[]" value="${dbi}">
+            <input type="hidden" name="haberi[]" value="${hbi}">
+            <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.remove()">×</button>
+        `;
+        listaCuentasI.appendChild(li);
+    };
+    
+    
+
+    // Crear elemento visual con input hidden
     }
 </script>
 {% endblock %}

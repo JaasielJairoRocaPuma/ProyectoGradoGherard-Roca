@@ -14,6 +14,12 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from .models import Grupo, SubGrupo, CuentaMatriz, CuentaMayor, CuentaAuxiliar
 from .forms import CreateNewCuentaAuxiliar, EditCuentaAuxiliar
+from openpyxl import Workbook #reportes en excel
+from reportlab.pdfgen import canvas #reportes en pdf
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
 
 def ListaPlanCuentasView(request):
     grupos = Grupo.objects.all()
@@ -49,195 +55,100 @@ def ListaPlanCuentasView(request):
             ca.save()
         return redirect(request.path)
 
-    
-    
+def reporte_excel(request):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Plan de Cuentas"
 
-# class CrearCuentaView(LoginRequiredMixin, CreateView):
-#     """
-#     Vista para crear una nueva cuenta en el Plan de Cuentas.
-#     Incluye validaciones específicas para códigos y jerarquías.
-#     """
-#     model = PlanCuentas
-#     form_class = PlanCuentasForm
-#     template_name = 'plancuentas/crear_cuenta.html'
-#     success_url = reverse_lazy('plancuentas:lista_cuentas')
-    
-#     def form_valid(self, form):
-#         messages.success(
-#             self.request, 
-#             f'Cuenta "{form.instance.codigo} - {form.instance.nombre}" creada exitosamente.'
-#         )
-#         return super().form_valid(form)
-    
-#     def form_invalid(self, form):
-#         messages.error(
-#             self.request, 
-#             'Por favor, corrija los errores en el formulario.'
-#         )
-#         return super().form_invalid(form)
+    # Encabezados
+    ws.append(["Codigo", "Descripcion", "Tipo", "Nivel"])
 
-# class EditarCuentaView(LoginRequiredMixin, UpdateView):
-#     """
-#     Vista para editar una cuenta existente en el Plan de Cuentas.
-#     Mantiene la integridad de la jerarquía de cuentas.
-#     """
-#     model = PlanCuentas
-#     form_class = PlanCuentasForm
-#     template_name = 'plancuentas/editar_cuenta.html'
-#     success_url = reverse_lazy('plancuentas:lista_cuentas')
-    
-#     def form_valid(self, form):
-#         messages.success(
-#             self.request, 
-#             f'Cuenta "{form.instance.codigo} - {form.instance.nombre}" actualizada exitosamente.'
-#         )
-#         return super().form_valid(form)
-    
-#     def form_invalid(self, form):
-#         messages.error(
-#             self.request, 
-#             'Por favor, corrija los errores en el formulario.'
-#         )
-#         return super().form_invalid(form)
+    # Datos del modelo
 
-# class EliminarCuentaView(LoginRequiredMixin, DeleteView):
-#     """
-#     Vista para eliminar una cuenta del Plan de Cuentas.
-#     Incluye validaciones para evitar eliminación de cuentas con movimientos.
-#     """
-#     model = PlanCuentas
-#     template_name = 'plancuentas/eliminar_cuenta.html'
-#     success_url = reverse_lazy('plancuentas:lista_cuentas')
-    
-#     def delete(self, request, *args, **kwargs):
-#         cuenta = self.get_object()
-        
-#         # Verificar si la cuenta tiene subcuentas
-#         if cuenta.cuentas_hijas.exists():
-#             messages.error(
-#                 request, 
-#                 f'No se puede eliminar la cuenta "{cuenta.codigo}" porque tiene subcuentas asociadas.'
-#             )
-#             return redirect('plancuentas:lista_cuentas')
-        
-#         # Verificar si la cuenta tiene movimientos (se implementará con comprobantes)
-#         # if cuenta.tiene_movimientos():
-#         #     messages.error(
-#         #         request, 
-#         #         f'No se puede eliminar la cuenta "{cuenta.codigo}" porque tiene movimientos registrados.'
-#         #     )
-#         #     return redirect('plancuentas:lista_cuentas')
-        
-#         messages.success(
-#             request, 
-#             f'Cuenta "{cuenta.codigo} - {cuenta.nombre}" eliminada exitosamente.'
-#         )
-#         return super().delete(request, *args, **kwargs)
+    for g in Grupo.objects.all():
+        ws.append([g.codigo, g.nombre, g.tipo, g.nivel])
+        for sg in SubGrupo.objects.filter(grupo=g):
+            ws.append([sg.codigo, sg.nombre, sg.tipo, sg.nivel])
+            for cm in CuentaMatriz.objects.filter(subgrupo=sg):
+                ws.append([cm.codigo, cm.nombre, cm.tipo, cm.nivel])
+                for cma in CuentaMayor.objects.filter(cuentamatriz=cm):
+                    ws.append([cma.codigo, cma.nombre, cma.tipo, cma.nivel])
+                    for ca in CuentaAuxiliar.objects.filter(cuentamayor=cma):
+                        ws.append([ca.codigo, ca.nombre, ca.tipo, ca.nivel])
 
-# @login_required
-# def detalle_cuenta(request, pk):
-#     """
-#     Vista para mostrar el detalle de una cuenta específica.
-#     Incluye información de jerarquía y saldos.
-#     """
-#     cuenta = get_object_or_404(PlanCuentas, pk=pk)
+    # Respuesta HTTP para descargar
+    response = HttpResponse(
+        content_type="application/ms-excel",
+    )
+    response['Content-Disposition'] = 'attachment; filename="reporte_plan_de_cuentas.xlsx"'
+    wb.save(response)
+    return response
     
-#     # Obtener cuentas hijas
-#     cuentas_hijas = cuenta.cuentas_hijas.all().order_by('codigo')
-    
-#     # Obtener saldo inicial
-#     saldo_inicial = cuenta.get_saldo_inicial()
-    
-#     context = {
-#         'cuenta': cuenta,
-#         'cuentas_hijas': cuentas_hijas,
-#         'saldo_inicial': saldo_inicial,
-#     }
-    
-#     return render(request, 'plancuentas/detalle_cuenta.html', context)
+def reporte_pdf(request):
+    response = HttpResponse(content_type="application/pdf")
+    response['Content-Disposition'] = 'attachment; filename="reporte_plan_cuentas.pdf"'
 
-# @login_required
-# def gestionar_saldos_iniciales(request):
-#     """
-#     Vista para gestionar los saldos iniciales de las cuentas.
-#     Permite establecer el estado inicial del Plan de Cuentas.
-#     """
-#     if request.method == 'POST':
-#         form = SaldoInicialForm(request.POST)
-#         if form.is_valid():
-#             form.save()
-#             messages.success(request, 'Saldo inicial registrado exitosamente.')
-#             return redirect('plancuentas:gestionar_saldos')
-#     else:
-#         form = SaldoInicialForm()
-    
-#     # Obtener saldos iniciales existentes
-#     saldos = SaldoInicial.objects.select_related('cuenta').order_by('cuenta__codigo')
-    
-#     context = {
-#         'form': form,
-#         'saldos': saldos,
-#     }
-    
-#     return render(request, 'plancuentas/gestionar_saldos.html', context)
+    doc = SimpleDocTemplate(response, pagesize=letter)
+    styles = getSampleStyleSheet()
+    elements = []
 
-# @login_required
-# def arbol_cuentas(request):
-#     """
-#     Vista para mostrar el Plan de Cuentas en formato de árbol.
-#     Facilita la visualización de la jerarquía de cuentas.
-#     """
-#     # Obtener cuentas de nivel 1 (raíz)
-#     cuentas_raiz = PlanCuentas.objects.filter(nivel=1, activa=True).order_by('codigo')
-    
-#     context = {
-#         'cuentas_raiz': cuentas_raiz,
-#     }
-    
-#     return render(request, 'plancuentas/arbol_cuentas.html', context)
+    title = Paragraph("PLAN DE CUENTAS", styles['Title'])
+    elements.append(title)
+    elements.append(Spacer(1, 12))
 
-# @login_required
-# def buscar_cuenta_ajax(request):
-#     """
-#     Vista AJAX para buscar cuentas por código o nombre.
-#     Utilizada para autocompletar en formularios.
-#     """
-#     query = request.GET.get('q', '')
-    
-#     if len(query) < 2:
-#         return JsonResponse({'cuentas': []})
-    
-#     cuentas = PlanCuentas.objects.filter(
-#         Q(codigo__icontains=query) | Q(nombre__icontains=query),
-#         activa=True
-#     ).order_by('codigo')[:10]
-    
-#     resultados = []
-#     for cuenta in cuentas:
-#         resultados.append({
-#             'id': cuenta.id,
-#             'codigo': cuenta.codigo,
-#             'nombre': cuenta.nombre,
-#             'tipo': cuenta.get_tipo_display(),
-#             'naturaleza': cuenta.get_naturaleza_display(),
-#         })
-    
-#     return JsonResponse({'cuentas': resultados})
+    # Cabecera
+    data = [["Código", "Descripción", "Tipo", "Nivel"]]
 
-# @login_required
-# def exportar_plan_cuentas(request):
-#     """
-#     Vista para exportar el Plan de Cuentas a diferentes formatos.
-#     Soporta exportación a CSV y Excel.
-#     """
-#     formato = request.GET.get('formato', 'csv')
-    
-#     if formato == 'csv':
-#         # Implementar exportación CSV
-#         pass
-#     elif formato == 'excel':
-#         # Implementar exportación Excel
-#         pass
-    
-#     messages.info(request, f'Plan de Cuentas exportado en formato {formato.upper()}')
-#     return redirect('plancuentas:lista_cuentas')
+    # Para poder aplicar negrillas luego, guardamos índices
+    rows_with_bold = []
+
+    def add_row(model, codigo_prefix=""):
+        """Agrega la fila a data y devuelve si debe ir en negrilla."""
+        codigo = codigo_prefix + model.codigo
+        data.append([codigo, model.nombre, model.tipo, model.nivel])
+
+        # Devuelve True si es nivel 1 a 4
+        return model.nivel and int(model.nivel) in (1, 2, 3, 4)
+
+    # Llenado de datos
+    for g in Grupo.objects.all():
+        if add_row(g):
+            rows_with_bold.append(len(data)-1)
+
+        for sg in SubGrupo.objects.filter(grupo=g):
+            if add_row(sg, ""):
+                rows_with_bold.append(len(data)-1)
+
+            for cm in CuentaMatriz.objects.filter(subgrupo=sg):
+                if add_row(cm, ""):
+                    rows_with_bold.append(len(data)-1)
+
+                for cma in CuentaMayor.objects.filter(cuentamatriz=cm):
+                    if add_row(cma, ""):
+                        rows_with_bold.append(len(data)-1)
+
+                    for ca in CuentaAuxiliar.objects.filter(cuentamayor=cma):
+                        if add_row(ca, ""):
+                            rows_with_bold.append(len(data)-1)
+
+    # Crear tabla
+    table = Table(data, colWidths=[80, 260, 60, 30])
+
+    # Estilos generales
+    style = TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('ALIGN', (0,0), (-1,0), 'CENTER'),
+        ('FONTNAME', (0,1), (-1,-1), 'Helvetica'),
+    ])
+
+    # 🔥 Agregar negrillas dinámicas a las filas nivel 1 a 4
+    for row_index in rows_with_bold:
+        style.add('FONTNAME', (0, row_index), (-1, row_index), 'Helvetica-Bold')
+
+    table.setStyle(style)
+    elements.append(table)
+
+    doc.build(elements)
+    return response

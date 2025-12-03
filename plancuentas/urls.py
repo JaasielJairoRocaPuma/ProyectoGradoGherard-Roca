@@ -10,6 +10,8 @@ app_name = 'plancuentas'
 urlpatterns = [
     # Rutas principales del Plan de Cuentas
     path('', views.ListaPlanCuentasView, name='lista_cuentas'),
+    path('imprimirexcel/', views.reporte_excel, name='imprimirexcel'),
+    path('imprimirpdf/', views.reporte_pdf, name='imprimirpdf'),
     # path('crear/', views.CrearCuentaView.as_view(), name='crear_cuenta'),
     # path('editar/<int:pk>/', views.EditarCuentaView.as_view(), name='editar_cuenta'),
     # path('eliminar/<int:pk>/', views.EliminarCuentaView.as_view(), name='eliminar_cuenta'),

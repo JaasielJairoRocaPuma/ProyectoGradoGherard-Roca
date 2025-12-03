@@ -10,8 +10,15 @@ from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import update_session_auth_hash
 from django.http import JsonResponse
+from django.db.models import Sum, F
 from .forms import LoginForm, PerfilUsuarioForm, CambioPasswordForm
 from .models import UsuarioContable
+from comprobantes.models import DescripcionCuentas
+from plancuentas.models import CuentaAuxiliar
+import google.generativeai as genai
+
+GEN_API_KEY="AIzaSyAnrMV2Z0Zn9FT0sZeOD5WrlqQsTYPBi2A"
+genai.configure(api_key=GEN_API_KEY)
 
 class LoginView(TemplateView):
     """
@@ -125,4 +132,98 @@ def verificar_sesion(request):
     return JsonResponse({
         'autenticado': request.user.is_authenticated,
         'usuario': request.user.username if request.user.is_authenticated else None
+    })
+
+@login_required
+def datos_grafico_cuentas(request):
+    """
+    Vista AJAX que devuelve los datos agregados de todas las cuentas de nivel 5
+    para el gráfico de pastel en el resumen financiero.
+    """
+    # Obtener todas las cuentas de nivel 5 (CuentaAuxiliar)
+    cuentas_nivel5 = CuentaAuxiliar.objects.all()
+    
+    datos_grafico = []
+    for cuenta in cuentas_nivel5:
+        # Sumar debe y haber de todas las DescripcionCuentas relacionadas
+        totales = DescripcionCuentas.objects.filter(cuenta=cuenta).aggregate(
+            total_debe=Sum('debe') or 0,
+            total_haber=Sum('haber') or 0
+        )
+        
+        # Calcular saldo (debe - haber)
+        saldo = (totales['total_debe'] or 0) - (totales['total_haber'] or 0)
+        
+        # Solo incluir si tiene movimiento
+        if saldo != 0:
+            datos_grafico.append({
+                'nombre': cuenta.nombre,
+                'codigo': cuenta.codigo,
+                'saldo': float(abs(saldo)),  # Valor absoluto para el gráfico
+                'saldo_real': float(saldo)  # Saldo real para detectar negativos
+            })
+    
+    return JsonResponse({'cuentas': datos_grafico})
+
+@login_required
+def alertas_cuentas_rojo(request):
+    """
+    Vista AJAX que detecta cuentas con saldo negativo (en rojo) y genera
+    mensajes descriptivos usando la API de Gemini.
+    """
+    cuentas_nivel5 = CuentaAuxiliar.objects.all()
+    cuentas_en_rojo = []
+    
+    for cuenta in cuentas_nivel5:
+        # Sumar debe y haber de todas las DescripcionCuentas relacionadas
+        totales = DescripcionCuentas.objects.filter(cuenta=cuenta).aggregate(
+            total_debe=Sum('debe') or 0,
+            total_haber=Sum('haber') or 0
+        )
+        
+        # Calcular saldo (debe - haber)
+        saldo = (totales['total_debe'] or 0) - (totales['total_haber'] or 0)
+        
+        # Si el saldo es negativo, está en rojo
+        if saldo < 0:
+            cuentas_en_rojo.append({
+                'codigo': cuenta.codigo,
+                'nombre': cuenta.nombre,
+                'saldo': float(saldo),
+                'saldo_absoluto': float(abs(saldo))
+            })
+    
+    # Si hay cuentas en rojo, usar Gemini para generar mensaje descriptivo
+    mensaje_alerta = ""
+    if cuentas_en_rojo:
+        try:
+            # Crear un resumen de las cuentas en rojo
+            resumen_cuentas = "\n".join([
+                f"- {c['codigo']} {c['nombre']}: Saldo negativo de {c['saldo_absoluto']:,.2f}"
+                for c in cuentas_en_rojo[:5]  # Primeras 5 para no saturar
+            ])
+            
+            prompt = f"""Como experto contable, analiza las siguientes cuentas que tienen saldo negativo (en rojo):
+            
+{resumen_cuentas}
+
+Genera un mensaje breve y profesional (máximo 150 palabras) en español que:
+1. Alerte sobre la situación
+2. Explique brevemente qué significa tener cuentas en rojo
+3. Sugiera acciones básicas a considerar
+
+Responde SOLO con el mensaje, sin formato adicional."""
+
+            model = genai.GenerativeModel("gemini-2.5-flash")
+            response = model.generate_content(prompt)
+            mensaje_alerta = response.text.strip()
+        except Exception as e:
+            # Si falla Gemini, usar mensaje predeterminado
+            mensaje_alerta = f"⚠️ Alerta: Se detectaron {len(cuentas_en_rojo)} cuenta(s) con saldo negativo. Revise las cuentas contables para corregir los desbalances."
+    
+    return JsonResponse({
+        'tiene_alertas': len(cuentas_en_rojo) > 0,
+        'cantidad': len(cuentas_en_rojo),
+        'cuentas': cuentas_en_rojo,
+        'mensaje': mensaje_alerta
     })

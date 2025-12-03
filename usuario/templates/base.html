@@ -10,6 +10,8 @@
         main { padding:16px; }
         nav a { color:#000000f5; margin-right:12px; text-decoration:none; }
         nav a:hover { text-decoration:underline; }
+        .hover-nav { transition: all 0.3s ease; }
+        .hover-nav:hover { background-color: rgba(255,255,255,0.2) !important; transform: translateY(-2px); }
         .container { max-width: 1100px; margin: 0 auto; background:#fff; padding:16px; border-radius:8px; }
         .card-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:12px; }
         .card { border:1px solid #e5e7eb; border-radius:8px; padding:12px; background:#fff; }
@@ -45,30 +47,46 @@
     }
     </style>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
 <div class="row">
-    <header class="text-dark">
-        <div class="container flex">
-            <div>
-                <strong>Sistema Contable</strong>
+    <header class="bg-dark text-white shadow-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;">
+        <div class="container-fluid px-4 py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-calculator me-2" style="font-size: 1.5rem;"></i>
+                    <strong class="fs-5">Sistema Contable</strong>
+                </div>
+                <nav class="d-flex gap-3">
+                    {% if request.user.is_authenticated %}
+                        <a href="{% url 'usuario:dashboard' %}" class="text-white text-decoration-none px-3 py-2 rounded hover-nav">Dashboard</a>
+                        <a href="{% url 'plancuentas:lista_cuentas' %}" class="text-white text-decoration-none px-3 py-2 rounded hover-nav">Plan de Cuentas</a>
+                        <a href="{% url 'comprobantes:lista_comprobantes' %}" class="text-white text-decoration-none px-3 py-2 rounded hover-nav">Comprobantes</a>
+                        <a href="{% url 'libros:lista_libros' %}" class="text-white text-decoration-none px-3 py-2 rounded hover-nav">Libros</a>
+                        <a href="{% url 'usuario:perfil_usuario' %}" class="text-white text-decoration-none px-3 py-2 rounded hover-nav">Perfil</a>
+                        <a href="{% url 'usuario:logout' %}" class="text-white text-decoration-none px-3 py-2 rounded hover-nav bg-danger bg-opacity-25">Salir</a>
+                    {% else %}
+                        <a href="{% url 'usuario:login' %}" class="text-white text-decoration-none px-3 py-2 rounded hover-nav">Ingresar</a>
+                    {% endif %}
+                </nav>
             </div>
-            <nav>
-                {% if request.user.is_authenticated %}
-                    <a href="{% url 'usuario:dashboard' %}">Dashboard</a>
-                    <a href="{% url 'plancuentas:lista_cuentas' %}">Plan de Cuentas</a>
-                    <a href="{% url 'comprobantes:lista_comprobantes' %}">Comprobantes</a>
-                    <a href="{% url 'usuario:perfil_usuario' %}">Perfil</a>
-                    <a href="{% url 'usuario:logout' %}">Salir</a>
-                {% else %}
-                    <a href="{% url 'usuario:login' %}">Ingresar</a>
-                {% endif %}
-            </nav>
         </div>
     </header>
-    <div class="col-md-2 col-lg-2 gradient-bg-inverse p-2" style="position: sticky; top: 0; height: 100vh; overflow: hidden;">
-        <h5 class="text-center text-dark fw-bold mb-4">Resumen Financiero</h5>
-        <canvas id="graficoBalance"></canvas>
+    <div class="col-md-2 col-lg-2 p-3 shadow-lg" style="position: sticky; top: 0; height: 100vh; overflow-y: auto; background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%); border-right: 2px solid #dee2e6;">
+        <div class="text-center mb-4">
+            <h5 class="text-dark fw-bold mb-2">
+                <i class="bi bi-pie-chart-fill me-2 text-primary"></i>Resumen Financiero
+            </h5>
+            <hr class="my-3">
+        </div>
+        <div class="bg-white rounded shadow-sm p-3 mb-3">
+            <canvas id="graficoBalance" style="max-width: 100%; max-height: 400px;"></canvas>
+        </div>
+        <div id="leyenda-grafico" class="mt-3" style="font-size: 0.7rem;"></div>
+        
+        <!-- Alertas de Cuentas en Rojo -->
+        <div id="alertas-cuentas-rojo" class="mt-3"></div>
     </div>
     <div class="col-md-10 col-lg-10 p-8">
     <main class="gradient-bg p-5 shadow">
@@ -83,8 +101,12 @@
             {% block content %}{% endblock %}
         </div>
     </main>
-    <footer>
-        © {% now 'Y' %} Sistema Contable - Proyecto de Grado
+    <footer class="bg-dark text-white text-center py-3 mt-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;">
+        <div class="container-fluid">
+            <p class="mb-0">
+                <i class="bi bi-copyright me-1"></i>{% now 'Y' %} Sistema Contable - Proyecto de Grado
+            </p>
+        </div>
     </footer>
     </div>
 </div>
@@ -99,6 +121,7 @@ async function obtenerTipoCambio() {
 
     // Asignar al input
     document.getElementById('tipo-cambio').value = venta.toFixed(2);
+    document.getElementById('tipo-cambio-i').value = venta.toFixed(2);
   } catch (error) {
     console.error('Error al obtener el tipo de cambio:', error);
     document.getElementById('tipo-cambio').value = 0;
@@ -107,29 +130,182 @@ async function obtenerTipoCambio() {
 
 // Llamar al cargar la página
 document.addEventListener('DOMContentLoaded', obtenerTipoCambio);
+
+// Cargar gráfico de cuentas de nivel 5
+async function cargarGraficoCuentas() {
+    try {
+        const response = await fetch('/usuario/datos-grafico-cuentas/');
+        const data = await response.json();
+        
+        if (data.cuentas && data.cuentas.length > 0) {
+            const ctx = document.getElementById('graficoBalance');
+            if (ctx) {
+                const labels = data.cuentas.map(c => c.nombre.length > 15 ? c.nombre.substring(0, 15) + '...' : c.nombre);
+                const valores = data.cuentas.map(c => c.saldo);
+                
+                // Generar colores dinámicamente
+                const colors = data.cuentas.map((_, i) => {
+                    const hue = (i * 137.508) % 360; // Golden angle approximation
+                    return `hsl(${hue}, 70%, 60%)`;
+                });
+                
+                new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: valores,
+                            backgroundColor: colors,
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const index = context.dataIndex;
+                                        const cuenta = data.cuentas[index];
+                                        return `${cuenta.codigo} - ${cuenta.nombre}: ${cuenta.saldo.toFixed(2)}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                // Crear leyenda personalizada
+                const leyendaDiv = document.getElementById('leyenda-grafico');
+                if (leyendaDiv) {
+                    let leyendaHtml = '<div class="list-group">';
+                    data.cuentas.forEach((cuenta, index) => {
+                        const color = colors[index];
+                        leyendaHtml += `
+                            <div class="list-group-item p-2" style="font-size: 0.7rem; background-color: transparent;">
+                                <span style="display: inline-block; width: 12px; height: 12px; background-color: ${color}; border-radius: 2px; margin-right: 5px;"></span>
+                                <strong>${cuenta.codigo}</strong> - ${cuenta.nombre.substring(0, 20)}${cuenta.nombre.length > 20 ? '...' : ''}
+                                <br><small class="text-muted">Saldo: ${cuenta.saldo.toFixed(2)}</small>
+                            </div>
+                        `;
+                    });
+                    leyendaHtml += '</div>';
+                    leyendaDiv.innerHTML = leyendaHtml;
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error al cargar gráfico de cuentas:', error);
+    }
+}
+
+// Cargar gráfico cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', cargarGraficoCuentas);
+
+// Cargar alertas de cuentas en rojo
+async function cargarAlertasCuentasRojo() {
+    try {
+        const response = await fetch('/usuario/alertas-cuentas-rojo/');
+        const data = await response.json();
+        
+        const alertasDiv = document.getElementById('alertas-cuentas-rojo');
+        if (alertasDiv && data.tiene_alertas) {
+            let alertaHtml = `
+                <div class="alert alert-danger border-0 shadow-sm" role="alert" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white;">
+                    <div class="d-flex align-items-start">
+                        <i class="bi bi-exclamation-triangle-fill me-2" style="font-size: 1.5rem; color: #ffc107;"></i>
+                        <div class="flex-grow-1">
+                            <h6 class="alert-heading fw-bold mb-2" style="color: white;">
+                                ⚠️ ${data.cantidad} Cuenta(s) en Rojo
+                            </h6>
+                            <p class="mb-2 small" style="color: rgba(255,255,255,0.9);">${data.mensaje}</p>
+                            <hr class="my-2" style="border-color: rgba(255,255,255,0.3);">
+                            <details class="small">
+                                <summary class="text-decoration-none fw-semibold" style="cursor: pointer; color: #ffc107;">Ver detalles</summary>
+                                <ul class="mt-2 mb-0 small" style="color: rgba(255,255,255,0.9);">
+            `;
+            
+            data.cuentas.slice(0, 5).forEach(cuenta => {
+                alertaHtml += `
+                    <li>
+                        <strong>${cuenta.codigo}</strong> - ${cuenta.nombre}: 
+                        <span class="fw-bold" style="color: #ffc107;">${cuenta.saldo.toFixed(2)}</span>
+                    </li>
+                `;
+            });
+            
+            if (data.cantidad > 5) {
+                alertaHtml += `<li class="text-muted"><em>... y ${data.cantidad - 5} más</em></li>`;
+            }
+            
+            alertaHtml += `
+                                </ul>
+                            </details>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            alertasDiv.innerHTML = alertaHtml;
+        } else if (alertasDiv) {
+            alertasDiv.innerHTML = '';
+        }
+    } catch (error) {
+        console.error('Error al cargar alertas de cuentas en rojo:', error);
+    }
+}
+
+// Cargar alertas cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', cargarAlertasCuentasRojo);
 </script>
 <script>
 async function obtenerUfv() {
     const fechaInput = document.getElementById('id_fecha');
+    const fechaInputI = document.getElementById('id_fecha-i');
     const ufvInput = document.getElementById('inputUfv');
+    const ufvInputI = document.getElementById('inputUfv-i');
     const fecha = fechaInput.value;
+    const fechaI = fechaInputI.value;
 
-    if (!fecha) return;
+    if (!fecha&&!fechaI) return;
 
-    try {
-        const res = await fetch(`/comprobantes/obtener-ufv-gpt/?fecha=${fecha}`);
-        const data = await res.json();
-
-        if (data.ufv) {
-            ufvInput.value = data.ufv.toFixed(6);
-        } else if (data.error) {
+    if (fecha){
+        try {
+            const res = await fetch(`/comprobantes/obtener-ufv-gpt/?fecha=${fecha}`);
+            const data = await res.json();
+    
+            if (data.ufv) {
+                ufvInput.value = data.ufv.toFixed(6);
+            } else if (data.error) {
+                ufvInput.value = '';
+                alert("Error al consultar la UFV: " + data.error);
+            }
+        } catch (error) {
             ufvInput.value = '';
-            alert("Error al consultar la UFV: " + data.error);
+            alert("Error al consultar la UFV. Intenta de nuevo.");
+            console.error("Error fetch UFV:", error);
         }
-    } catch (error) {
-        ufvInput.value = '';
-        alert("Error al consultar la UFV. Intenta de nuevo.");
-        console.error("Error fetch UFV:", error);
+    } else {
+        try {
+            const res = await fetch(`/comprobantes/obtener-ufv-gpt/?fecha=${fechaI}`);
+            const data = await res.json();
+    
+            if (data.ufv) {
+                ufvInputI.value = data.ufv.toFixed(6);
+            } else if (data.error) {
+                ufvInputI.value = '';
+                alert("Error al consultar la UFV: " + data.error);
+            }
+        } catch (error) {
+            ufvInput.value = '';
+            alert("Error al consultar la UFV. Intenta de nuevo.");
+            console.error("Error fetch UFV:", error);
+        }
     }
 }
 </script>

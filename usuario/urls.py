@@ -21,4 +21,6 @@ urlpatterns = [
     
     # Rutas AJAX
     path('verificar-sesion/', views.verificar_sesion, name='verificar_sesion'),
+    path('datos-grafico-cuentas/', views.datos_grafico_cuentas, name='datos_grafico_cuentas'),
+    path('alertas-cuentas-rojo/', views.alertas_cuentas_rojo, name='alertas_cuentas_rojo'),
 ]

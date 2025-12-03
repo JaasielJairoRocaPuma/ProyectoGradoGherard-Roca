@@ -5,7 +5,8 @@
 <div class="mb-4">
     
     <a class="btn btn-success bg-gradient fw-bold" href="{% url 'usuario:dashboard' %}">Volver</a>
-    
+    <a class="btn btn-success bg-gradient fw-bold" style="float: right;" href="{% url 'plancuentas:imprimirexcel' %}">Excel</a>
+    <a class="btn btn-danger bg-gradient fw-bold me-2" style="float: right;" href="{% url 'plancuentas:imprimirpdf' %}">PDF</a>
   </div>
   <div class="d-flex fw-bold text-light bg-primary bg-gradient p-2 rounded-top">
     <div class="col-2">Código</div>

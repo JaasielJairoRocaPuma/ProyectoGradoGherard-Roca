@@ -112,8 +112,10 @@ class Comprobante(models.Model):
         """
         Elimina el comprobante y reordena los números de los comprobantes restantes.
         """
-        tipo = self.tipo
-        numero = self.numero
+        # Guardar el tipo y número antes de eliminar
+        comprobante_tipo = self.tipo
+        comprobante_numero = self.numero
+        # Eliminar el comprobante
         self.delete()
-        # Reordenar los comprobantes restantes
-        Comprobante.objects.filter(tipo=tipo, numero__gt=numero).update(numero=F('numero') - 1)
+        # Reordenar los comprobantes restantes del mismo tipo
+        Comprobante.objects.filter(tipo=comprobante_tipo, numero__gt=comprobante_numero).update(numero=F('numero') - 1)

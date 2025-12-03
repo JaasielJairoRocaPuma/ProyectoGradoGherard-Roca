@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block title %}Libro de {{ tipo_nombre }}{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="text-light fw-bold mb-1" style="font-size: 2rem;">Libro de {{ tipo_nombre }}</h1>
+            <a href="{% url 'libros:lista_libros' %}" class="text-light text-decoration-none">
+                <i class="bi bi-arrow-left me-1"></i>Volver a Libros
+            </a>
+        </div>
+        <a href="{% url 'usuario:dashboard' %}" class="btn btn-outline-light">
+            <i class="bi bi-house me-1"></i>Dashboard
+        </a>
+    </div>
+    
+    <!-- Secciones por tipo de cuenta de nivel 5 -->
+    {% for seccion in secciones %}
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-info text-dark">
+            <h5 class="mb-0">
+                📁 Sección: {{ seccion.tipo_cuenta }}
+                <span class="badge bg-secondary ms-2">{{ seccion.comprobantes|length }} comprobantes</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            {% for comp_data in seccion.comprobantes %}
+            {% with comp=comp_data.comprobante %}
+            <div class="card mb-3 border-primary">
+                <div class="card-header bg-dark text-white">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <strong>{{ tipo_nombre }} Nro: {{ comp.numero }}</strong>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <small>Fecha: {{ comp.fecha|date:"d/m/Y" }} | T. Cambio: {{ comp.tipocambio|floatformat:4 }}</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-md-6">
+                            <strong>Beneficiario:</strong> {{ comp.beneficiario }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Glosa:</strong> {{ comp.glosa }}
+                        </div>
+                    </div>
+                    
+                    <!-- Tabla de cuentas del comprobante -->
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Cuenta</th>
+                                    <th class="text-end">Debe</th>
+                                    <th class="text-end">Haber</th>
+                                    <th class="text-end">Diferencia (USD)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cuenta in comp_data.cuentas %}
+                                <tr>
+                                    <td><strong>{{ cuenta.codigo }}</strong></td>
+                                    <td>{{ cuenta.nombre }}</td>
+                                    <td class="text-end">{{ cuenta.debe|floatformat:2 }}</td>
+                                    <td class="text-end">{{ cuenta.haber|floatformat:2 }}</td>
+                                    <td class="text-end">{{ cuenta.diferencia|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-secondary">
+                                <tr>
+                                    <td colspan="2" class="text-end fw-bold">Subtotal:</td>
+                                    <td class="text-end fw-bold">{{ comp_data.total_debe|floatformat:2 }}</td>
+                                    <td class="text-end fw-bold">{{ comp_data.total_haber|floatformat:2 }}</td>
+                                    <td class="text-end fw-bold">{{ comp_data.total_diferencia|floatformat:2 }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    
+                    <div class="text-end mt-2">
+                        <a href="{% url 'comprobantes:vista_comprobante' comp.id %}" class="btn btn-sm btn-outline-primary">
+                            Ver Detalle Completo
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endwith %}
+            {% empty %}
+            <p class="text-muted">No hay comprobantes en esta sección.</p>
+            {% endfor %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="alert alert-info">
+        No hay comprobantes registrados para este tipo.
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+

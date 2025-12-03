@@ -6,6 +6,49 @@ class CreateNewComprobante(forms.ModelForm):
         model = Comprobante
         fields = ['numero','fecha','glosa','beneficiario','ufv','tipo','imagen']
 
+class InsertNewComprobante2(forms.ModelForm):
+    class Meta:
+        model = DescripcionCuentas
+        fields=['debe','haber']
+        widgets = {
+            'debe': forms.NumberInput(attrs={
+                'id': 'id_debe-i',
+                'class': 'form-control'
+            }),
+            'haber': forms.NumberInput(attrs={
+                'id': 'id_haber-i',
+                'class': 'form-control'
+            }),
+        }
+
+class InsertNewComprobante(forms.ModelForm):
+    class Meta:
+        model = Comprobante
+        fields= ['numero','fecha','glosa','beneficiario','tipo','imagen']
+        widgets = {
+            'numero': forms.NumberInput(attrs={
+                'id': 'numeroC',
+                'name': 'numeroC',
+                'class': 'form-control'
+            }),
+            'tipo': forms.Select(attrs={
+                'name': 'tipo-i',
+                'class': 'form-select'
+            }),
+            'glosa': forms.TextInput(attrs={
+                'name': 'glosa-i',
+                'class': 'form-control'
+            }),
+            'beneficiario': forms.TextInput(attrs={
+                'name': 'beneficiario-i',
+                'class': 'form-control'
+            }),
+            'imagen': forms.ClearableFileInput(attrs={
+                'name': 'imagen-i',
+                'class': 'form-control'
+            }),
+        }
+
 class CreateNewDescripcionCuenta(forms.ModelForm):
     class Meta:
         model = DescripcionCuentas

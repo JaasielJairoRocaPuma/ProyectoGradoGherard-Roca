@@ -1,5 +1,206 @@
 {% extends 'base.html' %}
-{% block title %}Vista Comprobante{% endblock %}
+{% block title %}Vista Comprobante - {{ comprobante.get_tipo_display }} Nro: {{ comprobante.numero }}{% endblock %}
 {% block content %}
+<div class="container-fluid px-4 py-3">
+    <!-- Header con acciones -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="text-light fw-bold mb-1" style="font-size: 2rem;">
+                {{ comprobante.get_tipo_display }} Nro: {{ comprobante.numero }}
+            </h1>
+            <p class="text-light opacity-75 mb-0">Fecha: {{ comprobante.fecha|date:"d/m/Y" }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'comprobantes:lista_comprobantes' %}" class="btn btn-outline-light btn-lg">
+                <i class="bi bi-arrow-left me-2"></i>Volver
+            </a>
+            <a href="{% url 'comprobantes:imprimir_comprobante_pdf' comprobante.id %}" class="btn btn-danger btn-lg shadow">
+                <i class="bi bi-file-pdf me-2"></i>Imprimir PDF
+            </a>
+        </div>
+    </div>
 
+    <!-- Información Principal del Comprobante -->
+    <div class="card shadow-lg mb-4 border-0">
+        <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px 10px 0 0 !important;">
+            <h5 class="mb-0 fw-bold">
+                <i class="bi bi-file-earmark-text me-2"></i>Información del Comprobante
+            </h5>
+        </div>
+        <div class="card-body bg-light">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="p-3 bg-white rounded shadow-sm">
+                        <label class="form-label fw-bold text-primary mb-2">Tipo de Comprobante:</label>
+                        <p class="form-control-plaintext fs-5 mb-0">{{ comprobante.get_tipo_display }}</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-3 bg-white rounded shadow-sm">
+                        <label class="form-label fw-bold text-primary mb-2">Número:</label>
+                        <p class="form-control-plaintext fs-5 mb-0">{{ comprobante.numero }}</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-white rounded shadow-sm">
+                        <label class="form-label fw-bold text-primary mb-2">Fecha:</label>
+                        <p class="form-control-plaintext fs-5 mb-0">{{ comprobante.fecha|date:"d/m/Y" }}</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-white rounded shadow-sm">
+                        <label class="form-label fw-bold text-primary mb-2">Tipo de Cambio:</label>
+                        <p class="form-control-plaintext fs-5 mb-0">{{ comprobante.tipocambio|floatformat:4 }}</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-white rounded shadow-sm">
+                        <label class="form-label fw-bold text-primary mb-2">UFV:</label>
+                        <p class="form-control-plaintext fs-5 mb-0">{{ comprobante.ufv|floatformat:6 }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Cuentas -->
+    <div class="card shadow-lg mb-4 border-0">
+        <div class="card-header text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px 10px 0 0 !important;">
+            <h5 class="mb-0 fw-bold">
+                <i class="bi bi-table me-2"></i>Cuentas Contables
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col" class="px-4 py-3 fw-bold" style="background-color: #f8f9fa;">Código</th>
+                            <th scope="col" class="px-4 py-3 fw-bold" style="background-color: #f8f9fa;">Nombre de la Cuenta</th>
+                            <th scope="col" class="text-end px-4 py-3 fw-bold" style="background-color: #f8f9fa;">Debe</th>
+                            <th scope="col" class="text-end px-4 py-3 fw-bold" style="background-color: #f8f9fa;">Haber</th>
+                            <th scope="col" class="text-end px-4 py-3 fw-bold" style="background-color: #f8f9fa;">Diferencia (USD)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cuenta in cuentas_data %}
+                        <tr class="border-bottom">
+                            <td class="px-4 py-3"><strong class="text-primary">{{ cuenta.codigo }}</strong></td>
+                            <td class="px-4 py-3">{{ cuenta.nombre }}</td>
+                            <td class="text-end px-4 py-3 fw-semibold">{{ cuenta.debe|floatformat:2 }}</td>
+                            <td class="text-end px-4 py-3 fw-semibold">{{ cuenta.haber|floatformat:2 }}</td>
+                            <td class="text-end px-4 py-3 fw-semibold {% if cuenta.diferencia > 0 %}text-success{% elif cuenta.diferencia < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                {{ cuenta.diferencia|floatformat:2 }}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-5">No hay cuentas registradas</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-dark">
+                        <tr>
+                            <td colspan="2" class="text-end fw-bold px-4 py-3">TOTALES:</td>
+                            <td class="text-end fw-bold px-4 py-3">{{ total_debe|floatformat:2 }}</td>
+                            <td class="text-end fw-bold px-4 py-3">{{ total_haber|floatformat:2 }}</td>
+                            <td class="text-end fw-bold px-4 py-3 {% if total_diferencia > 0 %}text-success{% elif total_diferencia < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                {{ total_diferencia|floatformat:2 }}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Glosa y Beneficiario -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-lg border-0 h-100">
+                <div class="card-header text-white" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 10px 10px 0 0 !important;">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="bi bi-chat-left-text me-2"></i>Glosa
+                    </h5>
+                </div>
+                <div class="card-body bg-light">
+                    <p class="mb-0 fs-5 py-2">{{ comprobante.glosa }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-lg border-0 h-100">
+                <div class="card-header text-white" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 10px 10px 0 0 !important;">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="bi bi-person me-2"></i>Beneficiario
+                    </h5>
+                </div>
+                <div class="card-body bg-light">
+                    <p class="mb-0 fs-4 fw-semibold py-2">{{ comprobante.beneficiario }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firmas Responsables -->
+    <div class="card shadow-lg mb-4 border-0">
+        <div class="card-header text-white" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); border-radius: 10px 10px 0 0 !important;">
+            <h5 class="mb-0 fw-bold">
+                <i class="bi bi-pen me-2"></i>Firmas Responsables
+            </h5>
+        </div>
+        <div class="card-body bg-light">
+            {% if firmas_responsables %}
+            <div class="row g-4">
+                {% for firma in firmas_responsables %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card border-0 shadow-sm h-100" style="transition: transform 0.2s;">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-primary bg-opacity-10 rounded-circle p-3 me-3">
+                                    <i class="bi bi-person-circle text-primary" style="font-size: 2rem;"></i>
+                                </div>
+                                <h6 class="card-title mb-0 fw-bold">{{ firma.nombre }}</h6>
+                            </div>
+                            <hr class="my-3">
+                            <p class="card-text mb-2">
+                                <small class="text-muted d-block mb-1">Cargo:</small>
+                                <strong class="text-primary">{{ firma.cargo }}</strong>
+                            </p>
+                            <p class="card-text mb-0">
+                                <small class="text-muted d-block mb-1">CI:</small>
+                                <strong>{{ firma.ci }} {{ firma.get_extencion_display }}</strong>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-info mb-0" role="alert">
+                <i class="bi bi-info-circle me-2"></i>No hay firmas responsables registradas para este comprobante.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Botones de Acción -->
+    <div class="d-flex justify-content-center gap-3 mb-4">
+        <a href="{% url 'comprobantes:lista_comprobantes' %}" class="btn btn-outline-secondary btn-lg px-5">
+            <i class="bi bi-arrow-left me-2"></i>Volver a Lista
+        </a>
+        <a href="{% url 'comprobantes:imprimir_comprobante_pdf' comprobante.id %}" class="btn btn-danger btn-lg px-5 shadow">
+            <i class="bi bi-file-pdf me-2"></i>Imprimir PDF
+        </a>
+    </div>
+</div>
+
+<style>
+    .card:hover {
+        transform: translateY(-2px);
+    }
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+</style>
 {% endblock %}

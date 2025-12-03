@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'usuario',
     'plancuentas',
     'comprobantes',
+    'libros',
     #'balancesumasysaldos',
     #'estadopatrimonio',
 ]

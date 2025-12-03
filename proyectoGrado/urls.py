@@ -28,6 +28,7 @@ urlpatterns = [
     path('usuario/', include('usuario.urls')),
     path('plancuentas/', include('plancuentas.urls')),
     path('comprobantes/', include('comprobantes.urls')),
+    path('libros/', include('libros.urls')),
     #path('balances/', include('balancesumasysaldos.urls')),
     #path('estados/', include('estadopatrimonio.urls')),
 ]
